@@ -10,113 +10,127 @@ namespace ItemTagger
 
         [SynthesisOrder]
         [SynthesisSettingName("Append components")]
+        [SynthesisTooltip("If checked, component strings like {{{Wood,Steel}}} will be appended to scrappable items.")]
         public bool UseComponentString = false;
 
         [SynthesisOrder]
         [SynthesisSettingName("Custom Tagging Configuration")]
+        [SynthesisTooltip("If you selected \"Custom\" under Tagging Configuration, you can configure your tags here.")]
         public CustomTaggingConfig CustomConfig = new();
     }
 
     public class CustomTaggingConfig
     {
         [SynthesisOrder]
-        [SynthesisDescription("Shipments")]
+        [SynthesisTooltip("Shipments of resources")]
         public string tagShipment = "";
         [SynthesisOrder]
-        [SynthesisDescription("Scrap, MISCs which contain components")]
+        [SynthesisTooltip("Scrap, MISCs which contain components")]
         public string tagScrap = "";
         [SynthesisOrder]
-        [SynthesisDescription("Resources, MISCs which a meant to represent one type of component")]
+        [SynthesisTooltip("Resources, MISCs which a meant to represent one type of component")]
         public string tagResource = "";
         [SynthesisOrder]
-        [SynthesisDescription("Loose modifications")]
+        [SynthesisTooltip("Loose modifications")]
         public string tagLooseMod = "";
         [SynthesisOrder]
-        [SynthesisDescription("\"Collectible\" MISCs")]
+        [SynthesisTooltip("\"Collectible\" MISCs")]
         public string tagCollectible = "";
         [SynthesisOrder]
-        [SynthesisDescription("Quest Items")]
+        [SynthesisTooltip("Quest Items")]
         public string tagQuest = "";
         [SynthesisOrder]
-        [SynthesisDescription("\"Currency\", MISCs with zero weight and non-zero value")]
+        [SynthesisTooltip("MISCs with zero weight and non-zero value")]
         public string tagCurrency = "";
         [SynthesisOrder]
-        [SynthesisDescription("MISCs with more value than weight")]
+        [SynthesisTooltip("MISCs with more value than weight")]
         public string tagValuable = "";
         [SynthesisOrder]
-        [SynthesisDescription("all other MISCs, trash")]
+        [SynthesisTooltip("All other MISCs, trash")]
         public string tagOtherMisc = "";
         [SynthesisOrder]
-        [SynthesisDescription("Cures etc")]
+        [SynthesisTooltip("Stimpacks, Cures, generally positive, non-addictive chems")]
         public string tagGoodChem = "";
         [SynthesisOrder]
-        [SynthesisDescription("Addictive chems")]
+        [SynthesisTooltip("Addictive chems")]
         public string tagBadChem = "";
         [SynthesisOrder]
-        [SynthesisDescription("generic food, selfcooked. Usually radless")]
+        [SynthesisTooltip("Generic food, selfcooked food. Usually radless")]
         public string tagFood = "";
         [SynthesisOrder]
-        [SynthesisDescription("raw food, has rads, has disease risk")]
+        [SynthesisTooltip("Raw food, has rads, has disease risk")]
         public string tagFoodRaw = "";
         [SynthesisOrder]
-        [SynthesisDescription("crops, has rads")]
+        [SynthesisTooltip("Raw crops, usually have rads")]
         public string tagFoodCrop = "";
         [SynthesisOrder]
-        [SynthesisDescription("prewar packaged, has rads")]
+        [SynthesisTooltip("Prewar packaged, have rads")]
         public string tagFoodPrewar = "";
         [SynthesisOrder]
-        [SynthesisDescription("generic drinkable")]
+        [SynthesisTooltip("Generic drinkable")]
         public string tagDrink = "";
         [SynthesisOrder]
-        [SynthesisDescription("alcoholic beverages")]
+        [SynthesisTooltip("Alcoholic beverages")]
         public string tagLiquor = "";
         [SynthesisOrder]
-        [SynthesisDescription("Nuka Cola of any kind")]
+        [SynthesisTooltip("Nuka Cola of any kind")]
         public string tagNukacola = "";
         [SynthesisOrder]
-        [SynthesisDescription("Syringer ammo")]
+        [SynthesisTooltip("Syringer ammo")]
         public string tagSyringe = "";
         [SynthesisOrder]
-        [SynthesisDescription("Consumables which are supposed to be devices instead of something to eat, like the Stealth Boy")]
+        [SynthesisTooltip("Consumables which are supposed to be devices instead of something to eat, like the Stealth Boy")]
         public string tagDevice = "";
         [SynthesisOrder]
-        [SynthesisDescription("Similar to above, but for more low-tech things. Like SimSettlements Town Meeting Gavel, or the Companion Whistle")]
+        [SynthesisTooltip("Similar to \"Device\", but for more low-tech things. Like SimSettlements Town Meeting Gavel, or the Companion Whistle")]
         public string tagTool = "";
         [SynthesisOrder]
-        [SynthesisDescription("Newspaper, mostly Publick Occurences")]
+        [SynthesisTooltip("Newspaper, mostly Publick Occurences")]
         public string tagNews = "";
         [SynthesisOrder]
-        [SynthesisDescription("Any other paper note")]
+        [SynthesisTooltip("Any other paper note")]
         public string tagNote = "";
         [SynthesisOrder]
-        [SynthesisDescription("Perk Magazine")]
+        [SynthesisTooltip("Perk Magazine")]
         public string tagPerkmag = "";
         [SynthesisOrder]
-        [SynthesisDescription("Mines")]
+        [SynthesisTooltip("Mines")]
         public string tagMine = "";
         [SynthesisOrder]
-        [SynthesisDescription("Grenades")]
+        [SynthesisTooltip("Grenades")]
         public string tagGrenade = "";
         [SynthesisOrder]
-        [SynthesisDescription("Keys")]
+        [SynthesisTooltip("Keys")]
         public string tagKey = "";
         [SynthesisOrder]
-        [SynthesisDescription("Generic ammo")]
+        [SynthesisTooltip("Keycards")]
+        public string tagKeyCard = "";
+        [SynthesisOrder]
+        [SynthesisTooltip("Password, usually written on a note or holotape")]
+        public string tagPassword = "";
+        [SynthesisOrder]
+        [SynthesisTooltip("Generic ammo")]
         public string tagAmmo = "";
         [SynthesisOrder]
-        [SynthesisDescription("Generic holotape")]
+        [SynthesisTooltip("Generic holotape")]
         public string tagHolotape = "";
         [SynthesisOrder]
-        [SynthesisDescription("Game holotape")]
+        [SynthesisTooltip("Game holotape")]
         public string tagHolotapeGame = "";
         [SynthesisOrder]
-        [SynthesisDescription("Settings holotape")]
+        [SynthesisTooltip("Settings holotape")]
         public string tagHolotapeSettings = "";
         [SynthesisOrder]
-        [SynthesisDescription("The player's Pip-Boy, but also MISCs which you can give to NPCs, like from the VaultTec Workshop")]
+        [SynthesisTooltip("The player's Pip-Boy, but also MISCs which you can give to NPCs, like from the VaultTec Workshop")]
         public string tagPipBoy = "";
         [SynthesisOrder]
-        [SynthesisDescription("Any other tags (without brackets) which should be considered valid and left alone")]
+        [SynthesisTooltip("A weapon which cannot be renamed, but needs an adjustment of INNRs.")]
+        public string tagGun = "";
+        [SynthesisOrder]
+        [SynthesisTooltip("A piece of armor or clothing which cannot be renamed, and needs an adjustment of INNRs.")]
+        public string tagArmor = "";
+        [SynthesisOrder]
+        [SynthesisTooltip("Any other tags (without brackets) which should be considered valid and left as-is")]
         public List<string> extraValidTags = new();
     }
 }

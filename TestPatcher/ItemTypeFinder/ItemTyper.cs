@@ -1,6 +1,8 @@
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.Fallout4;
 using Mutagen.Bethesda.Plugins;
+using Mutagen.Bethesda.Plugins.Aspects;
+using Mutagen.Bethesda.Plugins.Records;
 using Mutagen.Bethesda.Synthesis;
 
 namespace ItemTagger.ItemTypeFinder
@@ -12,42 +14,49 @@ namespace ItemTagger.ItemTypeFinder
     {
         None, // none/unknown/do not tag
         // MISC types. 
-        Shipment, // Shipments
-        Scrap, // Scrap, MISCs which contain components
-        Resource, // Resources, MISCs which a meant to represent one type of component
-        LooseMod, // Loose modifications
-        Collectible, // "Collectible" MISCs
-        Quest, // Quest items
-        Currency, // "Currency", MISCs with zero weight and non-zero value
-        Valuable, // MISCs with more value than weight
-        OtherMisc,// all other MISCs, trash
+        Shipment,   // Shipments
+        Scrap,      // Scrap, MISCs which contain components
+        Resource,   // Resources, MISCs which a meant to represent one type of component
+        LooseMod,   // Loose modifications
+        Collectible,// "Collectible" MISCs
+        Quest,      // Quest items
+        Currency,   // "Currency", MISCs with zero weight and non-zero value
+        Valuable,   // MISCs with more value than weight
+        OtherMisc,  // all other MISCs, trash
         // ALCH types.
-        GoodChem, // Cures etc
-        BadChem, // Addictive chems
-        Food, // generic food, selfcooked. Usually radless
-        FoodRaw, // raw food, has rads, has disease risk
-        FoodCrop, // crops, has rads
+        GoodChem,   // Cures etc
+        BadChem,    // Addictive chems
+        Food,       // generic food, selfcooked. Usually radless
+        FoodRaw,    // raw food, has rads, has disease risk
+        FoodCrop,   // crops, has rads
         FoodPrewar, // prewar packaged, has rads
-        Drink, // generic drinkable
-        Liquor,// Alcoholic beverages
-        Nukacola, // Nuka Cola of any kind
-        Syringe, // Syringer ammo
-        Device, // Consumables which are supposed to be devices instead of something to eat, like the Stealth Boy
-        Tool, // Similar to above, but for more low-tech things. Like SimSettlements Town Meeting Gavel, or the Companion Whistle
+        Drink,      // generic drinkable
+        Liquor,     // Alcoholic beverages
+        Nukacola,   // Nuka Cola of any kind
+        Syringe,    // Syringer ammo
+        Device,     // Consumables which are supposed to be devices instead of something to eat, like the Stealth Boy
+        Tool,       // Similar to above, but for more low-tech things. Like SimSettlements Town Meeting Gavel, or the Companion Whistle
         // BOOK
-        News, // Newspaper
-        Note, // Any paper note
-        Perkmag, // Perk Magazine
+        News,       // Newspaper
+        Note,       // Any paper note
+        Perkmag,    // Perk Magazine
         // WEAP
-        Mine, // Mine
-        Grenade, // Grenade
+        Mine,       // Mine
+        Grenade,    // Grenade
         // etc
-        Key,// Keycard
-        Ammo, // Generic Ammo
-        Holotape, // Holotape
-        HolotapeGame, // Game Holotape
-        HolotapeSettings, // Settings Holotape
+        Key,                // Key
+        KeyCard,            // Keycard
+        KeyPassword,        // Password, usually written on a note or holotape
+
+        Ammo,               // Generic Ammo
+        Holotape,           // Holotape
+        HolotapeGame,       // Game Holotape
+        HolotapeSettings,   // Settings Holotape
+
+        // EQUIPMENT
         PipBoy, // player's pip-boy, also the MISC item from Vault88
+        Gun,    //A weapon which cannot be renamed, but needs an adjustment of INNRs.
+        Armor,  //A piece of armor or clothing which cannot be renamed, and needs an adjustment of INNRs.
     }
 
     public class ItemTyper
@@ -55,6 +64,9 @@ namespace ItemTagger.ItemTypeFinder
         private IPatcherState<IFallout4Mod, IFallout4ModGetter> patcherState;
 
         private Dictionary<FormKey, FormKey> looseModToOmodLookup = new Dictionary<FormKey, FormKey>();
+
+        private ItemTypeData itemTypeData = new();
+
         public ItemTyper(IPatcherState<IFallout4Mod, IFallout4ModGetter> state)
         {
             this.patcherState = state;
@@ -64,6 +76,10 @@ namespace ItemTagger.ItemTypeFinder
 
         public ItemType getMiscType(IMiscItemGetter miscItem)
         {
+            if(isItemBlacklisted(miscItem))
+            {
+                return ItemType.None;
+            }
             // if scriptname ends with :PipboyMiscItemScript -> pipboy
             if (this.hasScript(miscItem, ":PipboyMiscItemScript", false, true))
             {
@@ -138,8 +154,6 @@ namespace ItemTagger.ItemTypeFinder
 
         private void loadDictionaries()
         {
-
-            //var omods = this.patcherState.LoadOrder.PriorityOrder.ObjectModification().WinningOverrides();
             var omods = this.patcherState.LoadOrder.PriorityOrder.AObjectModification().WinningOverrides();
 
             foreach (var omod in omods)
@@ -201,6 +215,82 @@ namespace ItemTagger.ItemTypeFinder
             }
 
             return false;
+        }
+
+        private bool isItemBlacklisted<T>(T item)
+            where T: IHaveVirtualMachineAdapterGetter, INamedGetter, IMajorRecordGetter, IKeywordedGetter<IKeywordGetter>
+        {
+            return (
+                isBlacklistedByName(item.Name) ||
+                isBlacklistedByEditorId(item.EditorID) || 
+                isBlacklistedByScript(item) ||
+                isBlacklistedByKeyword(item)
+            );
+        }
+
+        private bool isBlacklistedByKeyword(IKeywordedGetter<IKeywordGetter> item)
+        {
+            if (item.Keywords == null)
+            {
+                return false;
+            }
+
+            // now, dark magic
+            var kwEdids = item.Keywords
+                .Select(kw => kw.TryResolve(patcherState.LinkCache)?.EditorID)
+                .Where(kw => kw != null) ?? new List<string>();
+
+            return kwEdids.Any(edid => itemTypeData.blacklistedKeywords.Contains(edid, StringComparer.OrdinalIgnoreCase));
+        }
+
+        private bool isBlacklistedByName(string? name)
+        {
+            if(null == name)
+            {
+                return false;
+            }
+
+            itemTypeData.blacklistedNameSubstrings.Any(substr => name.Contains(substr, StringComparison.OrdinalIgnoreCase));
+
+            return false;
+        }
+
+        private bool isBlacklistedByEditorId(string? edid)
+        {
+            if(edid == null)
+            {
+                return false;
+            }
+
+            return itemTypeData.blacklistedEdidPrefixes.Any(prefix => edid.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private bool isBlacklistedByScript(IHaveVirtualMachineAdapterGetter item)
+        {
+            if(item.VirtualMachineAdapter?.Scripts == null)
+            {
+                return false;
+            }
+
+            var scripts = item.VirtualMachineAdapter.Scripts;
+            foreach (var script in scripts)
+            {
+                if(itemTypeData.blacklistedScripts.Contains(script.Name, StringComparer.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+
+                // now prefixes
+                if(itemTypeData.blacklistedScriptPrefixes.Any(
+                        scriptPrefix => script.Name.StartsWith(scriptPrefix, StringComparison.OrdinalIgnoreCase)
+                    ))
+                {
+                    return true;
+                }
+                
+            }
+
+           return false;
         }
     }
 }

@@ -35,11 +35,15 @@ namespace ItemTagger
                 string tagMine,
                 string tagGrenade,
                 string tagKey,
+                string tagKeyCard,
+                string tagKeyPassword,
                 string tagAmmo,
                 string tagHolotape,
                 string tagHolotapeGame,
                 string tagHolotapeSettings,
                 string tagPipBoy,
+                string tagGun,
+                string tagArmor,
                 List<string> extraValidTags
             )
         {
@@ -70,11 +74,15 @@ namespace ItemTagger
             this.Add(ItemType.Mine, tagMine);
             this.Add(ItemType.Grenade, tagGrenade);
             this.Add(ItemType.Key, tagKey);
+            this.Add(ItemType.KeyCard, tagKeyCard);
+            this.Add(ItemType.KeyPassword, tagKeyPassword);
             this.Add(ItemType.Ammo, tagAmmo);
             this.Add(ItemType.Holotape, tagHolotape);
             this.Add(ItemType.HolotapeGame, tagHolotapeGame);
             this.Add(ItemType.HolotapeSettings, tagHolotapeSettings);
             this.Add(ItemType.PipBoy, tagPipBoy);
+            this.Add(ItemType.PipBoy, tagGun);
+            this.Add(ItemType.PipBoy, tagArmor);
 
             this.extraValidTags = extraValidTags;
 
@@ -105,16 +113,20 @@ namespace ItemTagger
             this.extraValidTags.Add(tagMine);
             this.extraValidTags.Add(tagGrenade);
             this.extraValidTags.Add(tagKey);
+            this.extraValidTags.Add(tagKeyCard);
+            this.extraValidTags.Add(tagKeyPassword);
             this.extraValidTags.Add(tagAmmo);
             this.extraValidTags.Add(tagHolotape);
             this.extraValidTags.Add(tagHolotapeGame);
             this.extraValidTags.Add(tagHolotapeSettings);
             this.extraValidTags.Add(tagPipBoy);
+            this.extraValidTags.Add(tagGun);
+            this.extraValidTags.Add(tagArmor);
         }
 
         public bool isTagValid(string tag)
         {
-            return extraValidTags.Contains(tag);
+            return extraValidTags.Contains(tag, StringComparer.OrdinalIgnoreCase);
         }
     }
 }

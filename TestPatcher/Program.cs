@@ -2,6 +2,7 @@ using ItemTagger.ItemTypeFinder;
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.Fallout4;
 using Mutagen.Bethesda.Synthesis;
+using System.Text.RegularExpressions;
 
 namespace ItemTagger
 {
@@ -26,31 +27,13 @@ namespace ItemTagger
 
         public static void RunPatch(IPatcherState<IFallout4Mod, IFallout4ModGetter> state)
         {
-            // first, get the configured tagging config
-
+            // get the configured tagging config
             var taggingConfig = getTaggingConfigByType(Settings.TaggingConfig);
 
-            var typer = new ItemTyper(state);
-
-            // process MISCs
-            var miscs = state.LoadOrder.PriorityOrder.MiscItem().WinningOverrides();
-
-            foreach (var misc in miscs)
-            {
-                var curType = typer.getMiscType(misc);
-                if (curType != ItemType.None)
-                {
-                    var prefix = taggingConfig[curType];
-                    if(prefix != "")
-                    {
-                        var newMisc = state.PatchMod.MiscItems.GetOrAddAsOverride(misc);
-                        newMisc.Name = prefix + " " + newMisc.Name;
-                    }
-                    //var prefix = getTagForType(curType);
-                }
-            }
-        }
-
+            var processor = new TaggingProcessor(taggingConfig, Settings, state);
+            // actually run the thing
+            processor.process();
+        }       
 
 
         private static TaggingConfiguration getTaggingConfigByType(TaggingConfigType type)
@@ -89,91 +72,19 @@ namespace ItemTagger
                 Settings.CustomConfig.tagMine,
                 Settings.CustomConfig.tagGrenade,
                 Settings.CustomConfig.tagKey,
+                Settings.CustomConfig.tagKeyCard,
+                Settings.CustomConfig.tagPassword,
                 Settings.CustomConfig.tagAmmo,
                 Settings.CustomConfig.tagHolotape,
                 Settings.CustomConfig.tagHolotapeGame,
                 Settings.CustomConfig.tagHolotapeSettings,
                 Settings.CustomConfig.tagPipBoy,
+                Settings.CustomConfig.tagGun,
+                Settings.CustomConfig.tagArmor,
                 Settings.CustomConfig.extraValidTags
             );
 
             return customConfig;
-        }
-
-        private static String getTagForType(ItemType type)
-        {
-            switch (type)
-            {
-                case ItemType.OtherMisc:
-                    return "aa";
-
-                case ItemType.Shipment:
-                    break;
-                case ItemType.Scrap:
-                    break;
-                case ItemType.Resource:
-                    break;
-                case ItemType.LooseMod:
-                    break;
-                case ItemType.Collectible:
-                    break;
-                case ItemType.Quest:
-                    break;
-                case ItemType.Currency:
-                    break;
-                case ItemType.Valuable:
-                    break;
-                case ItemType.GoodChem:
-                    break;
-                case ItemType.BadChem:
-                    break;
-                case ItemType.Food:
-                    break;
-                case ItemType.FoodRaw:
-                    break;
-                case ItemType.FoodCrop:
-                    break;
-                case ItemType.FoodPrewar:
-                    break;
-                case ItemType.Drink:
-                    break;
-                case ItemType.Liquor:
-                    break;
-                case ItemType.Nukacola:
-                    break;
-                case ItemType.Syringe:
-                    break;
-                case ItemType.Device:
-                    break;
-                case ItemType.Tool:
-                    break;
-                case ItemType.News:
-                    break;
-                case ItemType.Note:
-                    break;
-                case ItemType.Perkmag:
-                    break;
-                case ItemType.Mine:
-                    break;
-                case ItemType.Grenade:
-                    break;
-                case ItemType.Key:
-                    break;
-                case ItemType.Ammo:
-                    break;
-                case ItemType.Holotape:
-                    break;
-                case ItemType.HolotapeGame:
-                    break;
-                case ItemType.HolotapeSettings:
-                    break;
-                case ItemType.PipBoy:
-                    break;
-                case ItemType.None:
-                default:
-                    return "";
-            }
-            return "";
         }
     }
 }
