@@ -1,4 +1,5 @@
 using ItemTagger.ItemTypeFinder;
+using ItemTagger.TaggingConfigs;
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.Fallout4;
 using Mutagen.Bethesda.Synthesis;
@@ -32,7 +33,7 @@ namespace ItemTagger
 
             var processor = new TaggingProcessor(taggingConfig, Settings, state);
             // actually run the thing
-            processor.process();
+            processor.Process();
         }       
 
 

@@ -1,3 +1,4 @@
+using ItemTagger.TaggingConfigs;
 using Mutagen.Bethesda.Synthesis.Settings;
 
 namespace ItemTagger

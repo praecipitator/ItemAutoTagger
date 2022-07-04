@@ -1,4 +1,4 @@
-namespace ItemTagger
+namespace ItemTagger.TaggingConfigs
 {
 
 
@@ -229,7 +229,7 @@ namespace ItemTagger
             ));
 
         }
-    
+
         public TaggingConfiguration getConfigByType(TaggingConfigType type)
         {
             return defaultConfigs[type];

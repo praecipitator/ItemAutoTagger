@@ -1,6 +1,6 @@
 using ItemTagger.ItemTypeFinder;
 
-namespace ItemTagger
+namespace ItemTagger.TaggingConfigs
 {
     public class TaggingConfiguration : Dictionary<ItemType, string>
     {
@@ -47,42 +47,42 @@ namespace ItemTagger
                 List<string> extraValidTags
             )
         {
-            this.Add(ItemType.Shipment, tagShipment);
-            this.Add(ItemType.Scrap, tagScrap);
-            this.Add(ItemType.Resource, tagResource);
-            this.Add(ItemType.LooseMod, tagLooseMod);
-            this.Add(ItemType.Collectible, tagCollectible);
-            this.Add(ItemType.Quest, tagQuest);
-            this.Add(ItemType.Currency, tagCurrency);
-            this.Add(ItemType.Valuable, tagValuable);
-            this.Add(ItemType.OtherMisc, tagOtherMisc);
-            this.Add(ItemType.GoodChem, tagGoodChem);
-            this.Add(ItemType.BadChem, tagBadChem);
-            this.Add(ItemType.Food, tagFood);
-            this.Add(ItemType.FoodRaw, tagFoodRaw);
-            this.Add(ItemType.FoodCrop, tagFoodCrop);
-            this.Add(ItemType.FoodPrewar, tagFoodPrewar);
-            this.Add(ItemType.Drink, tagDrink);
-            this.Add(ItemType.Liquor, tagLiquor);
-            this.Add(ItemType.Nukacola, tagNukacola);
-            this.Add(ItemType.Syringe, tagSyringe);
-            this.Add(ItemType.Device, tagDevice);
-            this.Add(ItemType.Tool, tagTool);
-            this.Add(ItemType.News, tagNews);
-            this.Add(ItemType.Note, tagNote);
-            this.Add(ItemType.Perkmag, tagPerkmag);
-            this.Add(ItemType.Mine, tagMine);
-            this.Add(ItemType.Grenade, tagGrenade);
-            this.Add(ItemType.Key, tagKey);
-            this.Add(ItemType.KeyCard, tagKeyCard);
-            this.Add(ItemType.KeyPassword, tagKeyPassword);
-            this.Add(ItemType.Ammo, tagAmmo);
-            this.Add(ItemType.Holotape, tagHolotape);
-            this.Add(ItemType.HolotapeGame, tagHolotapeGame);
-            this.Add(ItemType.HolotapeSettings, tagHolotapeSettings);
-            this.Add(ItemType.PipBoy, tagPipBoy);
-            this.Add(ItemType.PipBoy, tagGun);
-            this.Add(ItemType.PipBoy, tagArmor);
+            Add(ItemType.Shipment, tagShipment);
+            Add(ItemType.Scrap, tagScrap);
+            Add(ItemType.Resource, tagResource);
+            Add(ItemType.LooseMod, tagLooseMod);
+            Add(ItemType.Collectible, tagCollectible);
+            Add(ItemType.Quest, tagQuest);
+            Add(ItemType.Currency, tagCurrency);
+            Add(ItemType.Valuable, tagValuable);
+            Add(ItemType.OtherMisc, tagOtherMisc);
+            Add(ItemType.GoodChem, tagGoodChem);
+            Add(ItemType.BadChem, tagBadChem);
+            Add(ItemType.Food, tagFood);
+            Add(ItemType.FoodRaw, tagFoodRaw);
+            Add(ItemType.FoodCrop, tagFoodCrop);
+            Add(ItemType.FoodPrewar, tagFoodPrewar);
+            Add(ItemType.Drink, tagDrink);
+            Add(ItemType.Liquor, tagLiquor);
+            Add(ItemType.Nukacola, tagNukacola);
+            Add(ItemType.Syringe, tagSyringe);
+            Add(ItemType.Device, tagDevice);
+            Add(ItemType.Tool, tagTool);
+            Add(ItemType.News, tagNews);
+            Add(ItemType.Note, tagNote);
+            Add(ItemType.Perkmag, tagPerkmag);
+            Add(ItemType.Mine, tagMine);
+            Add(ItemType.Grenade, tagGrenade);
+            Add(ItemType.Key, tagKey);
+            Add(ItemType.KeyCard, tagKeyCard);
+            Add(ItemType.KeyPassword, tagKeyPassword);
+            Add(ItemType.Ammo, tagAmmo);
+            Add(ItemType.Holotape, tagHolotape);
+            Add(ItemType.HolotapeGame, tagHolotapeGame);
+            Add(ItemType.HolotapeSettings, tagHolotapeSettings);
+            Add(ItemType.PipBoy, tagPipBoy);
+            Add(ItemType.Gun, tagGun);
+            Add(ItemType.Armor, tagArmor);
 
             this.extraValidTags = extraValidTags;
 

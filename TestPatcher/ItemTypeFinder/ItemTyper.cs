@@ -4,6 +4,7 @@ using Mutagen.Bethesda.Plugins;
 using Mutagen.Bethesda.Plugins.Aspects;
 using Mutagen.Bethesda.Plugins.Records;
 using Mutagen.Bethesda.Synthesis;
+using Noggog;
 
 namespace ItemTagger.ItemTypeFinder
 {
@@ -71,29 +72,283 @@ namespace ItemTagger.ItemTypeFinder
         {
             this.patcherState = state;
 
-            loadDictionaries();
+            LoadDictionaries();
         }
 
-        public ItemType getMiscType(IMiscItemGetter miscItem)
+        private IEnumerable<string> GetKeywordEdids(IKeywordedGetter<IKeywordGetter> item)
         {
-            if(isItemBlacklisted(miscItem))
+            return item.Keywords?
+                .Select(kw => kw.TryResolve(patcherState.LinkCache)?.EditorID)
+                .NotNull() ?? new List<string>();
+        }
+
+        public ItemType GetAlchType(IIngestibleGetter alch)
+        {
+            if (IsItemBlacklisted(alch))
             {
                 return ItemType.None;
             }
-            // if scriptname ends with :PipboyMiscItemScript -> pipboy
-            if (this.hasScript(miscItem, ":PipboyMiscItemScript", false, true))
+            var model = alch.Model?.File;
+            if(model.IsNullOrEmpty())
             {
+                // so apparently I'm not tagging model-less ALCHs
+                return ItemType.None;
+            }
+
+            var keywordEdids = this.GetKeywordEdids(alch);
+            if(keywordEdids.Contains("ObjectTypeSyringerAmmo"))
+            {
+                return ItemType.Syringe;
+            }
+
+            if (keywordEdids.Contains("ObjectTypeNukaCola"))
+            {
+                return ItemType.Nukacola;
+            }
+
+            if (keywordEdids.Contains("ObjectTypeAlcohol"))
+            {
+                return ItemType.Liquor;
+            }
+
+            
+            // do food first, so that stuff with both drink and food KWs get classified as food
+            if(itemTypeData.keywordListFood.matchesAny(keywordEdids))
+            {
+                return GetFoodType(alch, keywordEdids);
+            }
+
+            if(itemTypeData.keywordListDrink.matchesAny(keywordEdids))
+            {
+                // generic drink
+                return ItemType.Drink; 
+            }
+            if(itemTypeData.keywordListDevice.matchesAny(keywordEdids))
+            {
+                return ItemType.Device;
+            }
+
+            // now, check addiction
+            var isAddictive = !alch.Addiction.IsNull;
+
+            if(itemTypeData.keywordListChem.matchesAny(keywordEdids))
+            {
+                if(isAddictive)
+                {
+                    return ItemType.BadChem;
+                }
+                return ItemType.GoodChem;
+            }
+
+            // model list tool and device
+            if (itemTypeData.whitelistModelDevice.matches(model))
+            {
+                return ItemType.Device;
+            }
+
+            if (itemTypeData.whitelistModelTool.matches(model))
+            {
+                return ItemType.Tool;
+            }
+
+            // now try sound
+            var soundEdid = alch.ConsumeSound.TryResolve(patcherState.LinkCache)?.EditorID;
+            if(soundEdid != null)
+            {
+                if(soundEdid == "NPCHumanDrinkGeneric")
+                {
+                    if(isAddictive)
+                    {
+                        return ItemType.Liquor;
+                    }
+                    return ItemType.Drink;
+                }
+
+                if(itemTypeData.soundListFood.matches(soundEdid))
+                {
+                    var isFoodItem = alch.Flags.HasFlag(Ingestible.Flag.FoodItem);
+                    var isMedicine = alch.Flags.HasFlag(Ingestible.Flag.Medicine);
+
+                    if(!isFoodItem && isMedicine)
+                    {
+                        if(isAddictive)
+                        {
+                            return ItemType.BadChem;
+                        }
+                        return ItemType.GoodChem;
+                    }
+                    return GetFoodType(alch, keywordEdids);
+                }
+
+                if(itemTypeData.soundListChem.matches(soundEdid))
+                {
+                    if(isAddictive)
+                    {
+                        return ItemType.BadChem;
+                    }
+                    return ItemType.GoodChem;
+                }
+
+                if(itemTypeData.soundListDevice.matches(soundEdid))
+                {
+                    return ItemType.Device;
+                }
+
+                if (itemTypeData.soundListTool.matches(soundEdid))
+                {
+                    return ItemType.Tool;
+                }
+            }
+
+            if(alch.Flags.HasFlag(Ingestible.Flag.Medicine))
+            {
+                return ItemType.GoodChem;
+            }
+
+            return ItemType.None;
+        }
+
+        private ItemType GetFoodType(IIngestibleGetter food, IEnumerable<string> kwEdids)
+        {
+            var hasRads = food.Effects.Any(eff => eff.BaseEffect.TryResolve(patcherState.LinkCache)?.EditorID == "DamageRadiationChem");
+            //food.Effects.Select(eff => eff.BaseEffect.TryResolve(patcherState.LinkCache)?.EditorID);
+            if(!hasRads)
+            {
+                return ItemType.Food;
+            }
+
+            if(kwEdids.Contains("FruitOrVegetable"))
+            {
+                return ItemType.FoodCrop;
+            }
+
+            if(itemTypeData.keywordListFoodDisease.matchesAny(kwEdids))
+            {
+                return ItemType.FoodRaw;
+            }
+
+            //prewar doesn't have HC_IgnoreAsFood
+            if(!kwEdids.Contains("HC_IgnoreAsFood"))
+            {
+                return ItemType.FoodPrewar;
+            }
+
+            return ItemType.Food;
+        }
+
+        public ItemType GetHolotapeType(IHolotapeGetter holotape)
+        {
+            if (IsBlacklistedByName(holotape.Name?.String) ||
+                IsBlacklistedByEditorId(holotape.EditorID) ||
+                IsBlacklistedByScript(holotape))
+            {
+                return ItemType.None;
+            }
+
+            switch(holotape.Data)
+            {
+                case IHolotapeVoiceGetter:
+                case IHolotapeSoundGetter:
+                    // in these cases, consider it to be 100% a generic holotape
+                    return ItemType.Holotape;
+                case IHolotapeProgramGetter holotapeProgram:
+                    if(itemTypeData.programListGame.matches(holotapeProgram.File))
+                    {
+                        return ItemType.HolotapeGame;
+                    }                    
+                    break;
+            }
+            
+            // if still alive here, continue with heuristics.
+            // check EDID and Name
+            if (itemTypeData.nameListSettings.matches(holotape.Name?.String) || itemTypeData.edidListSettings.matches(holotape.EditorID))
+            {
+                return ItemType.HolotapeSettings;
+            }
+
+            return ItemType.Holotape;
+        }
+
+        public ItemType GetBookType(IBookGetter book)
+        {
+            if(IsScriptedItemBlacklisted(book))
+            {
+                return ItemType.None;
+            }
+            var modelName = book.Model?.File;
+            if (itemTypeData.whitelistModelNews.matches(modelName) || HasAnyScript(book, itemTypeData.scriptListNews))
+            {
+                return ItemType.News;
+            }
+
+            IEnumerable<string> keywordEdids = GetKeywordEdids(book);
+
+            if(itemTypeData.keywordListPerkmag.matchesAny(keywordEdids))
+            {
+                return ItemType.Perkmag;
+            }
+
+            return ItemType.Note;
+        }
+
+        public ItemType GetAmmoType(IAmmunitionGetter ammo)
+        {
+            if(ammo.Flags.HasFlag(Ammunition.Flag.NonPlayable))
+            {
+                return ItemType.None;
+            }
+
+            if (IsItemBlacklisted(ammo))
+            {
+                return ItemType.None;
+            }
+
+            return ItemType.Ammo;
+        }
+
+        public ItemType GetKeyType(IKeyGetter keyItem)
+        {
+            if (IsScriptedItemBlacklisted(keyItem))
+            {
+                return ItemType.None;
+            }
+
+            //var edid = keyItem.EditorID;
+            var model = keyItem.Model?.File;
+
+            if (itemTypeData.modelListKey.matches(model))
+            {
+                return ItemType.Key;
+            }
+
+            if (itemTypeData.modelListCard.matches(model))
+            {
+                return ItemType.KeyCard;
+            }
+
+            if (itemTypeData.modelListPassword.matches(model))
+            {
+                return ItemType.KeyPassword;
+            }
+
+            return ItemType.Key;
+        }
+
+        public ItemType GetMiscType(IMiscItemGetter miscItem)
+        {
+            if(IsScriptedItemBlacklisted(miscItem))
+            {
+                return ItemType.None;
+            }
+
+
+            if (HasAnyScript(miscItem, itemTypeData.scriptListPipBoy)) {
                 return ItemType.PipBoy;
             }
 
-            IEnumerable<string?> keywordEdids = miscItem.Keywords?
-                .Select(kw => kw.TryResolve(patcherState.LinkCache)?.EditorID)
-                .Where(kw => kw != null) ?? new List<string>();
+            IEnumerable<string> keywordEdids = GetKeywordEdids(miscItem);
 
-            //IKeywordedExt.HasKeyword()
-
-
-            if (keywordEdids.Contains("ObjectTypeLooseMod") || isLooseMod(miscItem))
+            if (keywordEdids.Contains("ObjectTypeLooseMod") || IsLooseMod(miscItem))
             {
                 return ItemType.LooseMod;
             }
@@ -129,12 +384,12 @@ namespace ItemTagger.ItemTypeFinder
                 return ItemType.Collectible;
             }
 
-            if (keywordEdids.Contains("VendorItemNoSale") || keywordEdids.Contains("VendorItemNoSale"))
+            if (itemTypeData.keywordListQuest.matchesAny(keywordEdids))
             {
                 return ItemType.Quest;
             }
 
-            if (miscItem.Model?.File?.ToLower() == "props\\pipboymiscitem\\pipboymisc01.nif")
+            if (itemTypeData.modelListPipBoy.matches(miscItem.Model?.File))
             {
                 return ItemType.PipBoy;
             }
@@ -152,7 +407,7 @@ namespace ItemTagger.ItemTypeFinder
             return ItemType.OtherMisc;
         }
 
-        private void loadDictionaries()
+        private void LoadDictionaries()
         {
             var omods = this.patcherState.LoadOrder.PriorityOrder.AObjectModification().WinningOverrides();
 
@@ -165,107 +420,81 @@ namespace ItemTagger.ItemTypeFinder
             }
         }
 
-        private bool isLooseMod(IMiscItemGetter miscItem)
+        private bool IsLooseMod(IMiscItemGetter miscItem)
         {
             return looseModToOmodLookup.ContainsKey(miscItem.FormKey);
         }
 
-        private bool hasKeyword(IMiscItemGetter miscItem, String keywordEdid)
+        private static bool HasAnyScript(IHaveVirtualMachineAdapterGetter item, MatchingList list)
         {
-            // IKeywordedExt
-            if (miscItem.Keywords == null)
-            {
-                return false;
-            }
-            foreach (var kw in miscItem.Keywords)
-            {
-                var resolvedKw = kw.TryResolve(patcherState.LinkCache);
-                if (null != resolvedKw && resolvedKw.EditorID == keywordEdid)
-                {
-                    return true;
-                }
-
-            }
-            return false;
-        }
-
-        private bool hasScript(IHaveVirtualMachineAdapterGetter miscItem, String scriptName, bool matchPrefix = false, bool matchSuffix = false)
-        {
-            if (miscItem?.VirtualMachineAdapter?.Scripts == null)
+            if (item?.VirtualMachineAdapter?.Scripts == null)
             {
                 return false;
             }
 
-            var scripts = miscItem.VirtualMachineAdapter.Scripts;
-
+            var scripts = item.VirtualMachineAdapter.Scripts;
             foreach (var script in scripts)
             {
-                if (script.Name == scriptName)
-                {
-                    return true;
-                }
-                if (matchPrefix && script.Name.StartsWith(scriptName))
-                {
-                    return true;
-                }
-                if (matchSuffix && script.Name.EndsWith(scriptName))
+                if(list.matches(script.Name))
                 {
                     return true;
                 }
             }
-
             return false;
         }
 
-        private bool isItemBlacklisted<T>(T item)
-            where T: IHaveVirtualMachineAdapterGetter, INamedGetter, IMajorRecordGetter, IKeywordedGetter<IKeywordGetter>
+        private bool IsScriptedItemBlacklisted<T>(T item)
+            where T: IHaveVirtualMachineAdapterGetter, ITranslatedNamedRequiredGetter, IMajorRecordGetter, IKeywordedGetter<IKeywordGetter>
         {
             return (
-                isBlacklistedByName(item.Name) ||
-                isBlacklistedByEditorId(item.EditorID) || 
-                isBlacklistedByScript(item) ||
-                isBlacklistedByKeyword(item)
+                IsBlacklistedByName(item.Name.String) ||
+                IsBlacklistedByEditorId(item.EditorID) || 
+                IsBlacklistedByScript(item) ||
+                IsBlacklistedByKeyword(item)
             );
         }
 
-        private bool isBlacklistedByKeyword(IKeywordedGetter<IKeywordGetter> item)
+        private bool IsItemBlacklisted<T>(T item)
+            where T : ITranslatedNamedRequiredGetter, IMajorRecordGetter, IKeywordedGetter<IKeywordGetter>
+        {
+            return (
+                IsBlacklistedByName(item.Name.String) ||
+                IsBlacklistedByEditorId(item.EditorID) ||
+                IsBlacklistedByKeyword(item)
+            );
+        }
+
+        private bool IsBlacklistedByKeyword(IKeywordedGetter<IKeywordGetter> item)
         {
             if (item.Keywords == null)
             {
                 return false;
             }
 
-            // now, dark magic
-            var kwEdids = item.Keywords
-                .Select(kw => kw.TryResolve(patcherState.LinkCache)?.EditorID)
-                .Where(kw => kw != null) ?? new List<string>();
-
-            return kwEdids.Any(edid => itemTypeData.blacklistedKeywords.Contains(edid, StringComparer.OrdinalIgnoreCase));
+            return itemTypeData.blacklistKeyword.matchesAny(GetKeywordEdids(item));
         }
 
-        private bool isBlacklistedByName(string? name)
+        private bool IsBlacklistedByName(string? name)
         {
             if(null == name)
             {
                 return false;
             }
 
-            itemTypeData.blacklistedNameSubstrings.Any(substr => name.Contains(substr, StringComparison.OrdinalIgnoreCase));
-
-            return false;
+            return itemTypeData.blacklistName.matches(name);
         }
 
-        private bool isBlacklistedByEditorId(string? edid)
+        private bool IsBlacklistedByEditorId(string? edid)
         {
             if(edid == null)
             {
                 return false;
             }
 
-            return itemTypeData.blacklistedEdidPrefixes.Any(prefix => edid.StartsWith(prefix, StringComparison.OrdinalIgnoreCase));
+            return itemTypeData.blacklistEdid.matches(edid);
         }
 
-        private bool isBlacklistedByScript(IHaveVirtualMachineAdapterGetter item)
+        private bool IsBlacklistedByScript(IHaveVirtualMachineAdapterGetter item)
         {
             if(item.VirtualMachineAdapter?.Scripts == null)
             {
@@ -275,19 +504,10 @@ namespace ItemTagger.ItemTypeFinder
             var scripts = item.VirtualMachineAdapter.Scripts;
             foreach (var script in scripts)
             {
-                if(itemTypeData.blacklistedScripts.Contains(script.Name, StringComparer.OrdinalIgnoreCase))
+                if(itemTypeData.blacklistScript.matches(script.Name))
                 {
                     return true;
-                }
-
-                // now prefixes
-                if(itemTypeData.blacklistedScriptPrefixes.Any(
-                        scriptPrefix => script.Name.StartsWith(scriptPrefix, StringComparison.OrdinalIgnoreCase)
-                    ))
-                {
-                    return true;
-                }
-                
+                }                
             }
 
            return false;

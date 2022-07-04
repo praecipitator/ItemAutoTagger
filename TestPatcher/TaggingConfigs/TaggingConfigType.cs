@@ -1,4 +1,4 @@
-namespace ItemTagger
+namespace ItemTagger.TaggingConfigs
 {
     public enum TaggingConfigType
     {
