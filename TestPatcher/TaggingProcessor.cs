@@ -7,6 +7,7 @@ using Mutagen.Bethesda.Plugins;
 using ItemTagger.TaggingConfigs;
 using Mutagen.Bethesda.Plugins.Aspects;
 using Noggog;
+using Mutagen.Bethesda.Plugins.Exceptions;
 
 namespace ItemTagger
 {
@@ -50,16 +51,24 @@ namespace ItemTagger
         {
             foreach(var alch in state.LoadOrder.PriorityOrder.Ingestible().WinningOverrides())
             {
-                var prevName = alch.Name?.String;
-
-                if (prevName.IsNullOrEmpty() || !ShouldTag(prevName))
+                try 
                 {
-                    continue;
+                    var prevName = alch.Name?.String;
+
+                    if (prevName.IsNullOrEmpty() || !ShouldTag(prevName))
+                    {
+                        continue;
+                    }
+
+                    var curType = itemTyper.GetAlchType(alch);
+
+                    TagItem(prevName, alch, curType, state.PatchMod.Ingestibles);
+
                 }
-
-                var curType = itemTyper.GetAlchType(alch);
-
-                TagItem(prevName, alch, curType, state.PatchMod.Ingestibles);
+                catch (Exception ex)
+                {
+                    throw RecordException.Enrich(ex, alch);
+                }
             }
         }
 
@@ -67,16 +76,23 @@ namespace ItemTagger
         {
             foreach(var tape in state.LoadOrder.PriorityOrder.Holotape().WinningOverrides())
             {
-                var prevName = tape.Name?.String;
-
-                if (prevName.IsNullOrEmpty() || !ShouldTag(prevName))
+                try
                 {
-                    continue;
+                    var prevName = tape.Name?.String;
+
+                    if (prevName.IsNullOrEmpty() || !ShouldTag(prevName))
+                    {
+                        continue;
+                    }
+
+                    var curType = itemTyper.GetHolotapeType(tape);
+
+                    TagItem(prevName, tape, curType, state.PatchMod.Holotapes);
                 }
-
-                var curType = itemTyper.GetHolotapeType(tape);
-
-                TagItem(prevName, tape, curType, state.PatchMod.Holotapes);
+                catch (Exception ex)
+                {
+                    throw RecordException.Enrich(ex, tape);
+                }
             }
         }
 
@@ -84,16 +100,23 @@ namespace ItemTagger
         {
             foreach(var book in state.LoadOrder.PriorityOrder.Book().WinningOverrides())
             {
-                var prevName = book.Name?.String;
-
-                if (prevName.IsNullOrEmpty() || !ShouldTag(prevName))
+                try 
                 {
-                    continue;
+                    var prevName = book.Name?.String;
+
+                    if (prevName.IsNullOrEmpty() || !ShouldTag(prevName))
+                    {
+                        continue;
+                    }
+
+                    var curType = itemTyper.GetBookType(book);
+
+                    TagItem(prevName, book, curType, state.PatchMod.Books);
                 }
-
-                var curType = itemTyper.GetBookType(book);
-
-                TagItem(prevName, book, curType, state.PatchMod.Books);
+                catch (Exception ex)
+                {
+                    throw RecordException.Enrich(ex, book);
+                }
             }
         }
 
@@ -102,14 +125,22 @@ namespace ItemTagger
             var ammos = state.LoadOrder.PriorityOrder.Ammunition().WinningOverrides();
             foreach(var ammo in ammos)
             {
-                var prevName = ammo.Name?.String;
-                if (prevName.IsNullOrEmpty() || !ShouldTag(prevName))
+                try 
                 {
-                    continue;
-                }
+                    var prevName = ammo.Name?.String;
+                    if (prevName.IsNullOrEmpty() || !ShouldTag(prevName))
+                    {
+                        continue;
+                    }
 
-                var curType = itemTyper.GetAmmoType(ammo);
-                TagItem(prevName, ammo, curType, state.PatchMod.Ammunitions);
+                    var curType = itemTyper.GetAmmoType(ammo);
+                    TagItem(prevName, ammo, curType, state.PatchMod.Ammunitions);
+
+                }
+                catch (Exception ex)
+                {
+                    throw RecordException.Enrich(ex, ammo);
+                }
             }
         }
 
@@ -118,16 +149,23 @@ namespace ItemTagger
             var keys = state.LoadOrder.PriorityOrder.Key().WinningOverrides();
             foreach(var key in keys)
             {
-                var prevName = key.Name?.String;
-
-                if (prevName.IsNullOrEmpty() || !ShouldTag(prevName))
+                try
                 {
-                    continue;
+                    var prevName = key.Name?.String;
+
+                    if (prevName.IsNullOrEmpty() || !ShouldTag(prevName))
+                    {
+                        continue;
+                    }
+
+                    var curType = itemTyper.GetKeyType(key);
+
+                    TagItem(prevName, key, curType, state.PatchMod.Keys);
                 }
-
-                var curType = itemTyper.GetKeyType(key);
-
-                TagItem(prevName, key, curType, state.PatchMod.Keys);                
+                catch (Exception ex)
+                {
+                    throw RecordException.Enrich(ex, key);
+                }
             }
         }
 
@@ -144,6 +182,10 @@ namespace ItemTagger
                 catch(ArgumentOutOfRangeException e)
                 {
                     Console.WriteLine("Exception while processing "+misc.FormKey.ToString()+": "+e.Message+". This might be a bug in Synthesis...");
+                }
+                catch(Exception e)
+                {
+                    throw RecordException.Enrich(e, misc);
                 }
             }
         }
