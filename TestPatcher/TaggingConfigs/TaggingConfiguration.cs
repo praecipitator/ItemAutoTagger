@@ -42,8 +42,12 @@ namespace ItemTagger.TaggingConfigs
                 string tagHolotapeGame,
                 string tagHolotapeSettings,
                 string tagPipBoy,
-                string tagGun,
+                string tagWeaponRanged,
+                string tagWeaponMelee,
                 string tagArmor,
+                string tagClothes,
+                string tagVaultSuit,
+                string tagPowerArmor,
                 List<string> extraValidTags
             )
         {
@@ -81,8 +85,12 @@ namespace ItemTagger.TaggingConfigs
             Add(ItemType.HolotapeGame, tagHolotapeGame);
             Add(ItemType.HolotapeSettings, tagHolotapeSettings);
             Add(ItemType.PipBoy, tagPipBoy);
-            Add(ItemType.Gun, tagGun);
+            Add(ItemType.WeaponRanged, tagWeaponRanged);
+            Add(ItemType.WeaponMelee, tagWeaponMelee);
             Add(ItemType.Armor, tagArmor);
+            Add(ItemType.Clothes, tagClothes);
+            Add(ItemType.VaultSuit, tagVaultSuit);
+            Add(ItemType.PowerArmor, tagPowerArmor);
 
             this.extraValidTags = extraValidTags;
 
@@ -120,8 +128,12 @@ namespace ItemTagger.TaggingConfigs
             this.extraValidTags.Add(tagHolotapeGame);
             this.extraValidTags.Add(tagHolotapeSettings);
             this.extraValidTags.Add(tagPipBoy);
-            this.extraValidTags.Add(tagGun);
+            this.extraValidTags.Add(tagWeaponRanged);
+            this.extraValidTags.Add(tagWeaponMelee);
             this.extraValidTags.Add(tagArmor);
+            this.extraValidTags.Add(tagClothes);
+            this.extraValidTags.Add(tagVaultSuit);
+            this.extraValidTags.Add(tagPowerArmor);
         }
 
         public bool isTagValid(string tag)

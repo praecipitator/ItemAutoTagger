@@ -80,8 +80,12 @@ namespace ItemTagger
                 Settings.CustomConfig.tagHolotapeGame,
                 Settings.CustomConfig.tagHolotapeSettings,
                 Settings.CustomConfig.tagPipBoy,
-                Settings.CustomConfig.tagGun,
+                Settings.CustomConfig.tagWeaponRanged,
+                Settings.CustomConfig.tagWeaponMelee,
                 Settings.CustomConfig.tagArmor,
+                Settings.CustomConfig.tagClothing,
+                Settings.CustomConfig.tagVaultSuit,
+                Settings.CustomConfig.tagPowerArmor,
                 Settings.CustomConfig.extraValidTags
             );
 

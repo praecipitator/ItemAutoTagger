@@ -125,11 +125,24 @@ namespace ItemTagger
         [SynthesisTooltip("The player's Pip-Boy, but also MISCs which you can give to NPCs, like from the VaultTec Workshop")]
         public string tagPipBoy = "";
         [SynthesisOrder]
-        [SynthesisTooltip("A weapon which cannot be renamed, but needs an adjustment of INNRs.")]
-        public string tagGun = "";
+        [SynthesisTooltip("Generic ranged weapon")]
+        public string tagWeaponRanged = "";
         [SynthesisOrder]
-        [SynthesisTooltip("A piece of armor or clothing which cannot be renamed, and needs an adjustment of INNRs.")]
+        [SynthesisTooltip("Generic melee weapon")]
+        public string tagWeaponMelee = "";
+        [SynthesisOrder]
+        [SynthesisTooltip("Generic piece of armor")]
         public string tagArmor = "";
+        [SynthesisOrder]
+        [SynthesisTooltip("Generic piece of non-armored clothing")]
+        public string tagClothing = "";
+        [SynthesisOrder]
+        [SynthesisTooltip("Any vault suit")]
+        public string tagVaultSuit = "";
+        [SynthesisOrder]
+        [SynthesisTooltip("Generic piece of power armor")]
+        public string tagPowerArmor = "";
+
         [SynthesisOrder]
         [SynthesisTooltip("Any other tags (without brackets) which should be considered valid and left as-is")]
         public List<string> extraValidTags = new();

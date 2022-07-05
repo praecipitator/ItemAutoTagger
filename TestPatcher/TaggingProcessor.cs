@@ -8,6 +8,7 @@ using ItemTagger.TaggingConfigs;
 using Mutagen.Bethesda.Plugins.Aspects;
 using Noggog;
 using Mutagen.Bethesda.Plugins.Exceptions;
+using Mutagen.Bethesda.FormKeys.Fallout4;
 
 namespace ItemTagger
 {
@@ -24,6 +25,14 @@ namespace ItemTagger
         // remove leading ' - ' and following '{{{foo}}}'
         private static readonly Regex TAG_CLEAN_NAME = new(@"^\s*-\s+|\s+{{{[^{}]*}}}\s*$", RegexOptions.Compiled);
 
+        // INNRs
+        //private static readonly FormKey fkInnrCommonMelee = FormKey.Factory()
+        private IInstanceNamingRulesGetter? innrCommonMelee = null;
+        private IInstanceNamingRulesGetter? innrCommonArmor = null;
+        private IInstanceNamingRulesGetter? innrPowerArmor = null;
+        private IInstanceNamingRulesGetter? innrClothes = null;
+        private IInstanceNamingRulesGetter? innrCommonGun = null;
+        private IInstanceNamingRulesGetter? innrVaultSuit = null;
         public TaggingProcessor(
             TaggingConfiguration taggingConf,
             TaggerSettings settings,
@@ -37,6 +46,12 @@ namespace ItemTagger
             itemTyper = new ItemTyper(state);
         }
 
+        private void loadInnrs()
+        {
+           // innrClothes = state.LinkCache.Resolve<IInstanceNamingRulesGetter>(Fallout4.InstanceNamingRules.dn_Clothes);
+            //state.LinkCache.TryResolve("foo", innrCommonMelee)
+        }
+
         public void Process()
         {
             ProcessMiscs();
@@ -45,6 +60,75 @@ namespace ItemTagger
             ProcessBooks();
             ProcessHolotapes();
             ProcessAlch();
+            // now, equipment
+            ProcessWeapons();
+        }
+
+        private void ProcessWeapons()
+        {
+            foreach(var weap in state.LoadOrder.PriorityOrder.Weapon().WinningOverrides())
+            {
+                //weap.ObjectTemplates
+                var prevName = weap.Name?.String;
+
+                if (prevName.IsNullOrEmpty() || !ShouldTag(prevName))
+                {
+                    continue;
+                }
+
+                var curType = itemTyper.GetWeaponType(weap);
+                if(curType != ItemType.WeaponRanged && curType != ItemType.WeaponMelee)
+                {
+                    // for non-guns, just tag like any other item
+                    // maybe ensure the REMOVAL of templates and INNRs here?
+                    TagItem(prevName, weap, curType, state.PatchMod.Weapons);
+                } 
+                else
+                {
+                    // do the INNR/template thing
+                    ProcessRegularWeapon(weap, curType);
+                }
+            }
+        }
+
+        private void ProcessRegularWeapon(IWeaponGetter weapon, ItemType type)
+        {
+            // TODO: check this weapon's INNR, if it has any.
+            // do we even need to process this?
+            if(!weapon.InstanceNaming.IsNull && weapon.ObjectTemplates?.Count > 0)
+            {
+                return;
+            }
+
+            var newOverride = state.PatchMod.Weapons.GetOrAddAsOverride(weapon);
+
+            // set an INNR
+            if (weapon.InstanceNaming.IsNull)
+            {
+                if(type == ItemType.WeaponMelee)
+                {
+                    newOverride.InstanceNaming.SetTo(Fallout4.InstanceNamingRules.dn_CommonMelee);
+                } 
+                else
+                {
+                    newOverride.InstanceNaming.SetTo(Fallout4.InstanceNamingRules.dn_CommonGun);
+                }
+
+            }
+
+            if(weapon.ObjectTemplates == null || weapon.ObjectTemplates.Count == 0)
+            {
+                newOverride.ObjectTemplates ??= new();
+                if(newOverride.ObjectTemplates.Count == 0)
+                {
+                    newOverride.ObjectTemplates.Add(new ObjectTemplate<Weapon.Property>()
+                    {
+                        Default = true,
+                        AddonIndex = -1
+                    });
+                }
+            }
+         
         }
 
         private void ProcessAlch()

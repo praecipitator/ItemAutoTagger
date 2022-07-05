@@ -20,6 +20,7 @@ namespace ItemTagger.ItemTypeFinder
         public MatchingList()
         {
             //exactMatchList.Comparer = new CaseInsensitiveComparer<string>(); 
+            //prefixMatchList.inter
         }
 
         public void addExactMatch(string text)

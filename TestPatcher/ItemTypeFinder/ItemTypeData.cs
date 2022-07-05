@@ -8,9 +8,12 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
+using Mutagen.Bethesda.FormKeys.Fallout4;
+using Mutagen.Bethesda.Plugins;
 
 namespace ItemTagger.ItemTypeFinder
 {
+    // TODO add a specialized KW list
     internal class ItemTypeData
     {
         // TODO potentially move this to a JSON/other config file, when I figure out how
@@ -18,7 +21,6 @@ namespace ItemTagger.ItemTypeFinder
         // blacklists
         public readonly MatchingList blacklistScript = new();
         public readonly MatchingList blacklistEdid = new();
-        public readonly MatchingList blacklistKeyword = new();
         public readonly MatchingList blacklistName = new();
 
         // whitelists
@@ -31,28 +33,36 @@ namespace ItemTagger.ItemTypeFinder
 
         public readonly MatchingList modelListPipBoy = new();
         public readonly MatchingList scriptListPipBoy = new();
+        public readonly MatchingList scriptListPerkMag = new();
 
-        public readonly MatchingList keywordListQuest = new();
+        
 
         public readonly MatchingList whitelistModelNews = new();
         public readonly MatchingList scriptListNews = new();
-        public readonly MatchingList keywordListPerkmag = new();
 
         public readonly MatchingList programListGame = new();
         public readonly MatchingList edidListSettings = new();
         public readonly MatchingList nameListSettings = new();
 
-        public readonly MatchingList keywordListDrink = new();
-        public readonly MatchingList keywordListFood = new();
-        public readonly MatchingList keywordListFoodDisease = new();
-
-        public readonly MatchingList keywordListDevice = new();
-        public readonly MatchingList keywordListChem = new();
 
         public readonly MatchingList soundListFood = new();
         public readonly MatchingList soundListChem = new();
         public readonly MatchingList soundListDevice = new();
         public readonly MatchingList soundListTool = new();
+
+        // keywords
+        public readonly MatchingKeywordList keywordsWeaponMelee = new();
+        public readonly MatchingKeywordList keywordsGlobalBlacklist = new();
+        public readonly MatchingKeywordList keywordsPerkmag = new();
+        public readonly MatchingKeywordList keywordsQuest = new();
+
+        public readonly MatchingKeywordList keywordListDrink = new();
+
+        public readonly MatchingKeywordList keywordListFood = new();
+        public readonly MatchingKeywordList keywordListFoodDisease = new();
+
+        public readonly MatchingKeywordList keywordListDevice = new();
+        public readonly MatchingKeywordList keywordListChem = new();
 
 
         // regexes? regices? regex objects for matching special stuff
@@ -62,6 +72,10 @@ namespace ItemTagger.ItemTypeFinder
 
         public ItemTypeData()
         {
+            keywordsWeaponMelee.Add(Fallout4.Keyword.WeaponTypeMelee1H);
+            keywordsWeaponMelee.Add(Fallout4.Keyword.WeaponTypeMelee2H);
+            keywordsWeaponMelee.Add(Fallout4.Keyword.WeaponTypeUnarmed);
+
             blacklistScript.addExactMatch("simsettlements:simbuildingplan");
             blacklistScript.addExactMatch("simsettlements:simstory");
             blacklistScript.addExactMatch("simsettlements:cityplan");
@@ -131,8 +145,7 @@ namespace ItemTagger.ItemTypeFinder
             blacklistEdid.addPrefixMatch("SS2C2_Nameholder_");
             blacklistEdid.addPrefixMatch("SS2_HQWorkerSelectForm_");
 
-            blacklistKeyword.addExactMatch("SS2_Tag_PetName");
-            blacklistKeyword.addExactMatch("SS2_Tag_NPCName");
+            
 
             whitelistModelTool.addExactMatch("autobuildplots\\weapons\\hammer\\hammer.nif");
             whitelistModelTool.addExactMatch("props\\smithingtools\\smithingtoolhammer01a.nif");
@@ -153,7 +166,6 @@ namespace ItemTagger.ItemTypeFinder
             whitelistModelTool.addExactMatch("props\\oilcan.nif");
             whitelistModelTool.addExactMatch("props\\clothingiron\\clothingiron.nif");
             whitelistModelTool.addExactMatch("props\\fishingreel.nif");
-
 
             whitelistModelDevice.addExactMatch("props\\stealthboy01.nif");
             whitelistModelDevice.addExactMatch("dlc01\\props\\dlc01_robotrepairkit01.nif");
@@ -203,8 +215,11 @@ namespace ItemTagger.ItemTypeFinder
             scriptListNews.addExactMatch("SimSettlements:Newspaper");
             scriptListNews.addExactMatch("SimSettlementsV2:Books:NewsArticle");
 
-            keywordListPerkmag.addExactMatch("PerkMagKeyword");
-            keywordListPerkmag.addExactMatch("CA_SkillMagazineScript");
+            keywordsGlobalBlacklist.Add("01F43E:SS2.esm"); // SS2_Tag_PetName
+            keywordsGlobalBlacklist.Add("01F43F:SS2.esm"); // SS2_Tag_NPCName
+
+            keywordsPerkmag.Add(Fallout4.Keyword.PerkMagKeyword);
+            scriptListPerkMag.addExactMatch("CA_SkillMagazineScript");
 
             // keys
             modelListKey.addExactMatch("props\\key01.nif");
@@ -227,8 +242,9 @@ namespace ItemTagger.ItemTypeFinder
             // stuff
             modelListPipBoy.addRegexMatch(MATCH_MODEL_PIPBOY);
             scriptListPipBoy.addSuffixMatch("PipboyMiscItemScript");
-            keywordListQuest.addExactMatch("VendorItemNoSale");
-            keywordListQuest.addExactMatch("UnscrappableObject");
+
+            keywordsQuest.Add(Fallout4.Keyword.VendorItemNoSale);
+            keywordsQuest.Add(Fallout4.Keyword.UnscrappableObject);
 
             programListGame.addExactMatch("atomiccommand.swf");
             programListGame.addExactMatch("grognak.swf");
@@ -245,33 +261,35 @@ namespace ItemTagger.ItemTypeFinder
             nameListSettings.addSubstringMatch("setting");
             nameListSettings.addSubstringMatch("config");
 
-            keywordListDrink.addExactMatch("ObjectTypeWater");
-            keywordListDrink.addExactMatch("ObjectTypeDrink");
-            keywordListDrink.addExactMatch("HC_SustenanceType_QuenchesThirst");
-            keywordListDrink.addExactMatch("ObjectTypeCaffeinated");
+            keywordListDrink.Add(Fallout4.Keyword.ObjectTypeWater);
+            keywordListDrink.Add(Fallout4.Keyword.ObjectTypeDrink);
+            keywordListDrink.Add(Fallout4.Keyword.HC_SustenanceType_QuenchesThirst);
+            keywordListDrink.Add(Fallout4.Keyword.ObjectTypeCaffeinated);
 
-            keywordListFood.addExactMatch("FoodEffect");
-            keywordListFood.addExactMatch("HC_DiseaseRisk_FoodVeryHigh");
-            keywordListFood.addExactMatch("HC_DiseaseRisk_FoodLow");
-            keywordListFood.addExactMatch("HC_DiseaseRisk_FoodHigh");
-            keywordListFood.addExactMatch("HC_DiseaseRisk_FoodStandard");
-            keywordListFood.addExactMatch("FruitOrVegetable");
-            keywordListFood.addExactMatch("ObjectTypeFood");
+            keywordListFood.Add(Fallout4.Keyword.FoodEffect);
+            // where did I even get these? they don't seem to exist
+            //keywordListFood.Add(Fallout4.Keyword.HC_DiseaseRisk_FoodVeryHigh);
+            //keywordListFood.Add(Fallout4.Keyword.HC_DiseaseRisk_FoodLow);
+            keywordListFood.Add(Fallout4.Keyword.HC_DiseaseRisk_FoodHigh);
+            keywordListFood.Add(Fallout4.Keyword.HC_DiseaseRisk_FoodStandard);
+            keywordListFood.Add(Fallout4.Keyword.FruitOrVegetable);
+            keywordListFood.Add(Fallout4.Keyword.ObjectTypeFood);
 
-            keywordListFoodDisease.addExactMatch("HC_DiseaseRisk_FoodVeryHigh");
-            keywordListFoodDisease.addExactMatch("HC_DiseaseRisk_FoodLow");
-            keywordListFoodDisease.addExactMatch("HC_DiseaseRisk_FoodHigh");
-            keywordListFoodDisease.addExactMatch("HC_DiseaseRisk_FoodStandard");
+            //keywordListFoodDisease.Add(Fallout4.Keyword.HC_DiseaseRisk_FoodVeryHigh);
+            //keywordListFoodDisease.Add(Fallout4.Keyword.HC_DiseaseRisk_FoodLow);
+            keywordListFoodDisease.Add(Fallout4.Keyword.HC_DiseaseRisk_FoodHigh);
+            keywordListFoodDisease.Add(Fallout4.Keyword.HC_DiseaseRisk_FoodStandard);
 
-            keywordListDevice.addExactMatch("ChemTypeStealthBoy");
-            keywordListDevice.addExactMatch("StealthBoyKeyword");
-            keywordListDevice.addExactMatch("DLC01ObjectTypeRepairKit");
+            keywordListDevice.Add(Fallout4.Keyword.ChemTypeStealthBoy);
+            keywordListDevice.Add(Fallout4.Keyword.StealthBoyKeyword);
+            keywordListDevice.Add("004F11:DLCRobot.esm");//Fallout4.Keyword.DLC01ObjectTypeRepairKit);
 
-            keywordListChem.addExactMatch("ObjectTypeStimpak");
-            keywordListChem.addExactMatch("ObjectTypeChem");
-            keywordListChem.addExactMatch("CA_ObjType_ChemBad");
-            keywordListChem.addExactMatch("HC_CausesImmunodeficiency");
-            keywordListChem.addExactMatch("HC_SustenanceType_IncreasesHunger");
+            keywordListChem.Add(Fallout4.Keyword.ObjectTypeStimpak);
+            keywordListChem.Add(Fallout4.Keyword.ObjectTypeChem);
+            keywordListChem.Add(Fallout4.Keyword.CA_ObjType_ChemBad);
+            keywordListChem.Add(Fallout4.Keyword.HC_DiseaseRiskChem);
+            keywordListChem.Add(Fallout4.Keyword.HC_CausesImmunodeficiency);
+            keywordListChem.Add(Fallout4.Keyword.HC_SustenanceType_IncreasesHunger);
 
             soundListFood.addExactMatch("NPCHumanEatChewy");
             soundListFood.addExactMatch("NPCHumanEatGeneric");

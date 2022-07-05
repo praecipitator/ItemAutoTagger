@@ -45,7 +45,11 @@ namespace ItemTagger.TaggingConfigs
                 "[Settings]",
                 "[Pipboy]",
                 "[Pistol]",
+                "[Melee]",
                 "[Armor]",
+                "[Clothes]",
+                "[VaultSuit]",
+                "[PowerArmor]",
                 new List<string>()
                     {
                         "Melee", "Unarmed", "MeleeOneHand", "MeleeTwoHand", "BoxingGlove", "Gauntlet", "PowerFist", "Knuckles", "BaseballBat", "SuperSledge", "TireIron", "WalkingCane", "PoolCue", "RollingPin", "LeadPipe", "Baton", "PipeWrench", "Board", "PaddleBall", "CombatKnife", "SwitchBlade", "Shish", "Sword", "RevDword", "Machete", "Ripper", "Axe", "PoleHook", "Ranged", "Pistol", "10mm", "TheDeliverer", "44P", "InstitutePistol", "PipeRevolver", "LaserPistol", "PlasmaPistol", "AlienGun", "FlareGun", "ThirstZapper", "AcidSoaker", "Rifle", "Cryo", "Syringer", "PipeRifle", "Leveraction", "InstituteRifle", "HuntingRifle", "Railway", "GaussRifle", "LaserRifle", "PlasmaRifle", "RadiumRifle", "HarpoonGun", "LaserMusket", "HandmadeRifle", "CombatRifle", "AssaultRifle", "Shotgun", "DoubleShotgun", "SMB", "Minigun", "Gatling", "JunkJet", "Cannon", "Flamethrower", "Rocketlauncher", "Fatman", "Ranged", "Grenade", "GrenadeCryo", "GrenadePlasma", "GrenadePulse", "Molotov", "Mine", "MineCryo", "MinePlasma", "MinePulse", "MineBottlecap", "Trap", "Ammo", "AmmoCaliber", "AmmoShells", "AmmoEnergy", "AmmoCannon", "AmmoMissile", "FusionCore", "NonHuman", "Unknown", "SuperMutant", "Clothes", "Hat", "Cap", "Bandana", "Eyes", "Mask", "GasMask", "FullGasMask", "Neck", "Ring", "Gloves", "Underwear", "FullOutfit", "Dress", "ProtectionSuit", "Armor", "FullArmor", "VaultSuit", "SetRaider", "SetLeather", "SetMetal", "SetMarine", "SetDCGuard", "SetSynth", "SetCombat", "SetCustom", "SetRobot", "FullHelm", "Helm", "ArmL", "ArmR", "Torso", "LegL", "LegR", "Jetpack", "Holster", "Pack", "PowerArmor", "PA_Raider", "T45", "T51", "T60", "X01", "PowerHelm", "PowerArmL", "PowerArmR", "PowerTorso", "PowerLegL", "PowerLegR", "Food", "RadFood", "Soup", "Stew", "Steak", "FoodStick", "Cake", "Boxed", "Canned", "Meat", "Vegetables", "Leaf", "Shroom", "Drink", "Nuka", "Liquor", "Beer", "Aid", "Chem", "Stimpak", "MedPills", "RadX", "MedSyringe", "MedSyringeGreen", "MedSyringeOrange", "MedInhalor", "MedRobot", "MedPackRed", "RadAway", "DrugPills", "DrugPillsBlue", "DrugPillsPurple", "DrugPillsOrange", "DrugSyringe", "DrugSyringeRed", "DrugSyringeOrange", "DrugSyringePurple", "DrugInhalor", "StealthBoy", "SyringerDart", "Camping", "PerkBobblehead", "PerkMag", "Collectible", "Valuable", "Note", "NotePubOcc", "NoteMisc", "Key", "Password", "Passcard", "Holotape", "HolotapeT", "HolotapeV", "HolotapeP", "Game", "Mod", "Settings", "Device", "Pipboy", "Lockpick", "Currency", "Resource", "Scrap", "Bottle", "Other", "OtherALCH", "Trash", "Brotherhood", "Minutemen", "Institute", "Railroad", "VaultTec", "Companion", "Quest", "MainQuest", "DiamondCity", "Goodneighbor", "Cabot", "Robot", "FarHarbor", "Acadia", "Atom", "Harbor", "NukaWorld", "Raid", "Radio", "SilverShroud", "Warning", "Military", "Distress", "Skylane", "Fire", "SkullCowboy", "Atom2", "Anarchy", "Energy", "StarOutline", "Defense2", "Biohazard", "Water", "Water2"
@@ -77,19 +81,23 @@ namespace ItemTagger.TaggingConfigs
                 "(Tool)",
                 "[News]",
                 "[Note]",
-                "[Perk: Mag]",
+                "[PerkMag]",
                 "(Mine)",
                 "(Grenade)",
-                "|Key|",
-                "|Key|",
-                "|Key|",
+                "[Key]",
+                "[Passcard]",
+                "[Passcard]",
                 "(Ammo)",
                 "[Holotape]",
                 "[Game]",
                 "[Settings]",
                 "[Pipboy]",
                 "[Gun]",
+                "[Melee]",
                 "[Armor]",
+                "[Clothing]",
+                "[Clothing]",// vaultsuit
+                "[PArmor]",
                 new List<string>()
                     {
                         "Mutant", "Dog", "Game", "Core", "Book", "Ore", "Trash", "Shroom", "Herb", "Ingredient", "Bobblehead", "Ring", "Unique", "Kremvh", "Deliverer", "Armor", "Gun", "Clothing", "Melee", "PArmor", "ArmorChest", "ArmorArm", "ArmorLeg", "ArmorHead", "ArmorMask", "Hat", "Mask", "Eyes", "Flare", "Pistol", "ARifle", "CRifle", "RRifle", "Rifle", "Revolver", "Syringer", "Shotgun", "Rocket", "Railway", "PRifle", "PPistol", "IRifle", "IPistol", "PipeR", "Pipe", "Lever", "FatMan", "Musket", "LRifle", "LPistol", "JunkJet", "Gauss", "Gatling", "Flamer", "Cryolator", "Cannon", "Minigun", "Gamma", "Alien", "SMG", "Revolver", "Harpoon", "Shishkebab", "Ripper", "MeleeH2H", "Melee1H", "Melee2H", "Bat", "Sword", "Knife", "Sledge", "PArmorLegR", "PArmorLegL", "PArmorArmR", "PArmorArmL", "PArmorChest", "PArmorHead"
@@ -133,7 +141,11 @@ namespace ItemTagger.TaggingConfigs
                 "[Settings]",
                 "[Arm]",
                 "[Gun]",
+                "[Melee]",
                 "[Armor]",
+                "[Clothing]",
+                "[Clothing]",
+                "[PArmor]",
                 new List<string>()
                     {
                         "Shipment", "Scrap", "Resource", "Mod", "Collectible", "Quest", "Currency", "Valuable", "Misc", "Medicine", "Chem", "Food", "Raw", "Crop", "Prewar", "Drink", "Nuka", "Liquor", "Syringe", "Device", "Tool", "Note", "Perk: Mag", "News", "Grenade", "Mine", "Trap", "Holotape", "Settings", "Key", "Ammo", "Pipboy", "Mutant", "Dog", "Game", "Core", "Book", "Ore", "Trash", "Shroom", "Herb", "Ingredient", "Bobblehead", "Ring", "Unique", "Kremvh", "Deliverer", "Armor", "Gun", "Clothing", "Melee", "PArmor", "ArmorChest", "ArmorArm", "ArmorLeg", "ArmorHead", "ArmorMask", "Hat", "Mask", "Eyes", "Flare", "Pistol", "ARifle", "CRifle", "RRifle", "Rifle", "Revolver", "Syringer", "Shotgun", "Rocket", "Railway", "PRifle", "PPistol", "IRifle", "IPistol", "PipeR", "Pipe", "Lever", "FatMan", "Musket", "LRifle", "LPistol", "JunkJet", "Gauss", "Gatling", "Flamer", "Cryolator", "Cannon", "Minigun", "Gamma", "Alien", "SMG", "Revolver", "Harpoon", "Shishkebab", "Ripper", "MeleeH2H", "Melee1H", "Melee2H", "Bat", "Sword", "Knife", "Sledge", "PArmorLegR", "PArmorLegL", "PArmorArmR", "PArmorArmL", "PArmorChest", "PArmorHead"
@@ -177,6 +189,10 @@ namespace ItemTagger.TaggingConfigs
                 "[Settings]",
                 "(Pipboy)",
                 "[Rifle]",
+                "[Rifle]",// maybe "4jz Melee", but, is that really a tag?
+                "[Armor]",
+                "[Armor]",
+                "[Armor]", // maybe "1s Vault-Tec"?
                 "[Armor]",
                 new List<string>()
                     {
@@ -221,7 +237,11 @@ namespace ItemTagger.TaggingConfigs
                 "[Settings]",
                 "|Pip|",
                 "[1gun]",
+                "[1melee]",
                 "[Armor]",
+                "[#Cloth]",
+                "[Vault]",
+                "[1power]",
                 new List<string>()
                     {
                         "Aid", "+", "+T", "++", "Cure", "-", "-X", "-R", "Device", "Buff", "Schematic", "!Sleep", "FM", "!Rest", "^", "^D", "^A", "^T", "^R", "^M", "^Fish", "^S", "$", "$$", "X$", "?", "*", ":", "!", "Can", "!P", "!W", "!Y", "!T", "#W", "#SK", "#C", "#B", "#P", "D-", "#^", "#", "##", "__", "CM", "--", " ", "  ", "_", "_#", "!!", "X", "XX", "Y", "J", "Junk", "JunkP", "Model", "Food", "FoodC", "Meal", "Crops", "Crop", "Chem", "ChemC", "Energy", "~", "~C", "~A", "Liquor", "=L", "=", "==", "=C", "Nuka", "NukaC", "Prewar", "I", "Raw", "Wild", "Ingredients", "Syringe", "Ammo", "XAmmo", "AmmoN", "AmmoM", "Fuel", "Core", "PA-AL", "PA-AR", "PA-C", "PA-H", "PA-LL", "PA-LR", "PA", "ArmL", "ArmR", "Arm", "Gloves", "Chest", "Vault", "LegL", "LegR", "Leg", "Bandolier", "Belt", "Biosuit", "!Hazmat", "Hazmat", "Bottom", "Bracelet", "Cloak", "Dog", "Earring", "Footwear", "Harness", "Hat", "#Hat", "Headband", "#Headband", "Eyewear", "#Eyewear", "Helmet", "#Helmet", "Head", "#Head", "H", "Jacket", "Mouth", "Mask", "#Mask", "#Cloth", "!Mask", "Neck", "Offhand", "Pack", "Piercing", "Rifle", "Ring", "Satchel", "Scarf", "Sidearm", "Super Mutant", "Mutant", "Top", "Vest", "Armor", "Clothing", "A", "C", "Underarmor", "Signal", "Resource", "Scrap", "Tool", "Currency", "Lockpick", "Utility", "KW", "KH", "KR", "KE", "SkillA", "SkillB", "SkillTA", "SkillC", "SkillE1", "SkillE2", "SkillE3", "SkillF", "SkillH1", "SkillH2", "SkillL1", "SkillL2", "SkillM", "SkillS1", "SkillS2", "SkillS3", "SkillS4", "SkillTR", "SkillW1", "SkillW2", "SkillW3", "SkillW4", "SkillW5", "WS", "SkillX", "SkillY", "#Karma1", "#Karma2", "#Karma3", "#HZ", "Skill", "Unique", "Valuable", "Collectible", "Crafting", "Craft", "Mat", "Misc", "Game", "Hack", "Holotape", "#Holotape", "HoloC", "#H", "#Note", "NoteC", "#N", "RE", "#Fn", "#FnM", "#FnB", "#FnR", "#FnI", "ADR", "ADP", "FSA", "FSS", "FSD", "FSM", "FSX", "FSC", "FST", "FSE", "FSI", "STR", "Comp", "#Comp", "BH", "Mag", "MagC", "Quest", "Trash", "Key", "KeyC", "Pass", "Mod", "Mod2", "Mod-A", "Mod-W", "Mod-AG", "WAmmo", "Mod-P", "Mod-R", "Mod-D", "1star", "1aim", "1gun", "1energy", "1rifle", "1melee", "1armor", "1helm", "1skull", "1atom", "!A", "1power", "Grenade", "GrenadeP", "GrenadeE", "GrenadeM", "GrenadeK", "Fire", "Damage", "Rad", "Poison", "Cryo", "Mine", "MineC", "MineP", "MineE", "Trap", "Flare", "FlareS", "FlareG", "FlareV", "FlareA", "BPS", "EL", "EP", "EPF", "EWC", "EWG", "WM", "WF", "BG", "BGA", "BP", "BR", "BS", "SNA", "SNGB", "SNGE", "SNM", "M", "XM", "XM1B", "XM1S", "XM2B", "XM2S", "XMU", "Wrist", "NPC", "Shroud", "Casual", "Dress", "Formal", "Rugged", "Lab", "Fireworks", "Settings", "Check", "1Settings", "Modbook", "Config", "Menu", "Nuke", "VNuke", "SW", "SA", "SC", "SH", "SE", "SM", "SP", "RR", "MM", "Institute", "BOS", "BMarket", "Gear", "!Settler", "Settler", "Farm", "Camp", "Boat", "City", "Outpost", "House", "Store", "Town", "Foundation", "Warehouse", "Factory", "Bunker", "Airship", "Aircraft", "Hall", "Bridge", "Dock", "Tower", "Improvised", "Natural", "Park", "Car", "Radar", "Water", "Defense", "Pipe", "MG", "Laser", "Plasma", "Missile", "Shotgun", "Gauss", "Mining", "Salvaging", "Ore", "Color", "Display", "Size", "Weave", "Pip", "Filter"

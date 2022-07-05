@@ -1,7 +1,9 @@
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.Fallout4;
+using Mutagen.Bethesda.FormKeys.Fallout4;
 using Mutagen.Bethesda.Plugins;
 using Mutagen.Bethesda.Plugins.Aspects;
+using Mutagen.Bethesda.Plugins.Exceptions;
 using Mutagen.Bethesda.Plugins.Records;
 using Mutagen.Bethesda.Synthesis;
 using Noggog;
@@ -56,8 +58,15 @@ namespace ItemTagger.ItemTypeFinder
 
         // EQUIPMENT
         PipBoy, // player's pip-boy, also the MISC item from Vault88
-        Gun,    //A weapon which cannot be renamed, but needs an adjustment of INNRs.
-        Armor,  //A piece of armor or clothing which cannot be renamed, and needs an adjustment of INNRs.
+
+        // INNRable equipment
+        WeaponRanged,   // should have dn_CommonGun
+        WeaponMelee,    // should have dn_CommonMelee
+
+        Armor,      // should have dn_CommonArmor
+        Clothes,    // should have dn_Clothes
+        VaultSuit,  // should have dn_VaultSuit
+        PowerArmor  // should have dn_PowerArmor
     }
 
     public class ItemTyper
@@ -82,6 +91,64 @@ namespace ItemTagger.ItemTypeFinder
                 .NotNull() ?? new List<string>();
         }
 
+        public ItemType GetWeaponType(IWeaponGetter weapon)
+        {
+            // mines and grenades are their own things, otherwise "gun"
+            if(weapon.Flags.HasFlag(Weapon.Flag.NotPlayable))
+            {
+                return ItemType.None;
+            }
+
+            // ammo?
+            if(!weapon.Ammo.IsNull)
+            {
+                // this thing uses ammo, so not an explosive
+                if(itemTypeData.keywordsWeaponMelee.ItemHasAny(weapon))
+                {
+                    return ItemType.WeaponMelee;
+                }
+                return ItemType.WeaponRanged;
+            }
+
+            var kwEdids = this.GetKeywordEdids(weapon);
+            if(kwEdids.Contains("WeaponTypeGrenade"))
+            {
+                return ItemType.Grenade;
+            }
+
+            var equipType = weapon.EquipmentType.TryResolve(patcherState.LinkCache);
+
+            if (equipType?.EditorID == "GrenadeSlot")
+            {
+                if(kwEdids.Contains("AnimsMine"))
+                {
+                    return ItemType.Mine;
+                }
+
+                // get projectile
+                var proj = weapon.ExtraData?.ProjectileOverride.TryResolve(patcherState.LinkCache);
+                if(proj == null)
+                {
+                    return ItemType.None;
+                }
+
+                if(proj.ExplosionAltTriggerProximity > 0)
+                {
+                    return ItemType.Mine;
+
+                }
+
+                return ItemType.Grenade;
+            }
+
+            if (itemTypeData.keywordsWeaponMelee.ItemHasAny(weapon))
+            {
+                return ItemType.WeaponMelee;
+            }
+            // otherwise, assume generic gun
+            return ItemType.WeaponRanged;
+        }
+
         public ItemType GetAlchType(IIngestibleGetter alch)
         {
             if (IsItemBlacklisted(alch))
@@ -96,34 +163,34 @@ namespace ItemTagger.ItemTypeFinder
             }
 
             var keywordEdids = this.GetKeywordEdids(alch);
-            if(keywordEdids.Contains("ObjectTypeSyringerAmmo"))
+            if(alch.HasKeyword(Fallout4.Keyword.ObjectTypeSyringerAmmo))
             {
                 return ItemType.Syringe;
             }
 
-            if (keywordEdids.Contains("ObjectTypeNukaCola"))
+            if(alch.HasKeyword(Fallout4.Keyword.ObjectTypeNukaCola))
             {
                 return ItemType.Nukacola;
             }
 
-            if (keywordEdids.Contains("ObjectTypeAlcohol"))
+            if(alch.HasKeyword(Fallout4.Keyword.ObjectTypeAlcohol))
             {
                 return ItemType.Liquor;
             }
 
             
             // do food first, so that stuff with both drink and food KWs get classified as food
-            if(itemTypeData.keywordListFood.matchesAny(keywordEdids))
+            if(itemTypeData.keywordListFood.ItemHasAny(alch))
             {
-                return GetFoodType(alch, keywordEdids);
+                return GetFoodType(alch);
             }
 
-            if(itemTypeData.keywordListDrink.matchesAny(keywordEdids))
+            if(itemTypeData.keywordListDrink.ItemHasAny(alch))
             {
                 // generic drink
                 return ItemType.Drink; 
             }
-            if(itemTypeData.keywordListDevice.matchesAny(keywordEdids))
+            if(itemTypeData.keywordListDevice.ItemHasAny(alch))
             {
                 return ItemType.Device;
             }
@@ -131,7 +198,7 @@ namespace ItemTagger.ItemTypeFinder
             // now, check addiction
             var isAddictive = !alch.Addiction.IsNull;
 
-            if(itemTypeData.keywordListChem.matchesAny(keywordEdids))
+            if(itemTypeData.keywordListChem.ItemHasAny(alch))
             {
                 if(isAddictive)
                 {
@@ -177,7 +244,7 @@ namespace ItemTagger.ItemTypeFinder
                         }
                         return ItemType.GoodChem;
                     }
-                    return GetFoodType(alch, keywordEdids);
+                    return GetFoodType(alch);
                 }
 
                 if(itemTypeData.soundListChem.matches(soundEdid))
@@ -208,7 +275,7 @@ namespace ItemTagger.ItemTypeFinder
             return ItemType.None;
         }
 
-        private ItemType GetFoodType(IIngestibleGetter food, IEnumerable<string> kwEdids)
+        private ItemType GetFoodType(IIngestibleGetter food)
         {
             var hasRads = food.Effects.Any(eff => eff.BaseEffect.TryResolve(patcherState.LinkCache)?.EditorID == "DamageRadiationChem");
             //food.Effects.Select(eff => eff.BaseEffect.TryResolve(patcherState.LinkCache)?.EditorID);
@@ -216,19 +283,18 @@ namespace ItemTagger.ItemTypeFinder
             {
                 return ItemType.Food;
             }
-
-            if(kwEdids.Contains("FruitOrVegetable"))
+            if(food.HasKeyword(Fallout4.Keyword.FruitOrVegetable))
             {
                 return ItemType.FoodCrop;
             }
 
-            if(itemTypeData.keywordListFoodDisease.matchesAny(kwEdids))
+            if(itemTypeData.keywordListFoodDisease.ItemHasAny(food))
             {
                 return ItemType.FoodRaw;
             }
 
             //prewar doesn't have HC_IgnoreAsFood
-            if(!kwEdids.Contains("HC_IgnoreAsFood"))
+            if(!food.HasKeyword(Fallout4.Keyword.HC_IgnoreAsFood))
             {
                 return ItemType.FoodPrewar;
             }
@@ -238,35 +304,44 @@ namespace ItemTagger.ItemTypeFinder
 
         public ItemType GetHolotapeType(IHolotapeGetter holotape)
         {
-            if (IsBlacklistedByName(holotape.Name?.String) ||
-                IsBlacklistedByEditorId(holotape.EditorID) ||
-                IsBlacklistedByScript(holotape))
+            try
             {
+                if (IsBlacklistedByName(holotape.Name?.String) ||
+                    IsBlacklistedByEditorId(holotape.EditorID) ||
+                    IsBlacklistedByScript(holotape))
+                {
+                    return ItemType.None;
+                }
+
+            
+                switch(holotape.Data)
+                {
+                    case IHolotapeVoiceGetter:
+                    case IHolotapeSoundGetter:
+                        // in these cases, consider it to be 100% a generic holotape
+                        return ItemType.Holotape;
+                    case IHolotapeProgramGetter holotapeProgram:
+                        if(itemTypeData.programListGame.matches(holotapeProgram.File))
+                        {
+                            return ItemType.HolotapeGame;
+                        }                    
+                        break;
+                }
+            
+                // if still alive here, continue with heuristics.
+                // check EDID and Name
+                if (itemTypeData.nameListSettings.matches(holotape.Name?.String) || itemTypeData.edidListSettings.matches(holotape.EditorID))
+                {
+                    return ItemType.HolotapeSettings;
+                }
+
+                return ItemType.Holotape;
+            } 
+            catch(MalformedDataException e)
+            {
+                Console.WriteLine("Exception while processing " + holotape.FormKey.ToString() + ": " + e.Message + ". This thing can't be processed.");
                 return ItemType.None;
             }
-
-            switch(holotape.Data)
-            {
-                case IHolotapeVoiceGetter:
-                case IHolotapeSoundGetter:
-                    // in these cases, consider it to be 100% a generic holotape
-                    return ItemType.Holotape;
-                case IHolotapeProgramGetter holotapeProgram:
-                    if(itemTypeData.programListGame.matches(holotapeProgram.File))
-                    {
-                        return ItemType.HolotapeGame;
-                    }                    
-                    break;
-            }
-            
-            // if still alive here, continue with heuristics.
-            // check EDID and Name
-            if (itemTypeData.nameListSettings.matches(holotape.Name?.String) || itemTypeData.edidListSettings.matches(holotape.EditorID))
-            {
-                return ItemType.HolotapeSettings;
-            }
-
-            return ItemType.Holotape;
         }
 
         public ItemType GetBookType(IBookGetter book)
@@ -281,9 +356,10 @@ namespace ItemTagger.ItemTypeFinder
                 return ItemType.News;
             }
 
-            IEnumerable<string> keywordEdids = GetKeywordEdids(book);
+            //IEnumerable<string> keywordEdids = GetKeywordEdids(book);
 
-            if(itemTypeData.keywordListPerkmag.matchesAny(keywordEdids))
+            
+            if(itemTypeData.keywordsPerkmag.ItemHasAny(book) || HasAnyScript(book, itemTypeData.scriptListPerkMag))
             {
                 return ItemType.Perkmag;
             }
@@ -346,9 +422,8 @@ namespace ItemTagger.ItemTypeFinder
                 return ItemType.PipBoy;
             }
 
-            IEnumerable<string> keywordEdids = GetKeywordEdids(miscItem);
-
-            if (keywordEdids.Contains("ObjectTypeLooseMod") || IsLooseMod(miscItem))
+            if (miscItem.HasKeyword(Fallout4.Keyword.ObjectTypeLooseMod) || IsLooseMod(miscItem))
+            //if (keywordEdids.Contains("ObjectTypeLooseMod") || IsLooseMod(miscItem))
             {
                 return ItemType.LooseMod;
             }
@@ -358,8 +433,7 @@ namespace ItemTagger.ItemTypeFinder
             {
                 // shipment, scrap, or resource
                 // could theoretically also be a scrappable loose mod
-
-                if (keywordEdids.Contains("ShipmentScript"))
+                if(HasScript(miscItem, "ShipmentScript"))
                 {
                     return ItemType.Shipment;
                 }
@@ -378,13 +452,13 @@ namespace ItemTagger.ItemTypeFinder
 
                 return ItemType.Scrap;
             }
-
-            if (keywordEdids.Contains("FeaturedItem"))
+            
+            if (miscItem.HasKeyword(Fallout4.Keyword.FeaturedItem))
             {
                 return ItemType.Collectible;
             }
 
-            if (itemTypeData.keywordListQuest.matchesAny(keywordEdids))
+            if (itemTypeData.keywordsQuest.ItemHasAny(miscItem))
             {
                 return ItemType.Quest;
             }
@@ -425,6 +499,23 @@ namespace ItemTagger.ItemTypeFinder
             return looseModToOmodLookup.ContainsKey(miscItem.FormKey);
         }
 
+        private static bool HasScript(IHaveVirtualMachineAdapterGetter item, String scriptName)
+        {
+            if (item?.VirtualMachineAdapter?.Scripts == null)
+            {
+                return false;
+            }
+
+            var scripts = item.VirtualMachineAdapter.Scripts;
+            foreach (var script in scripts)
+            {
+                if(script.Name.Equals(scriptName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
         private static bool HasAnyScript(IHaveVirtualMachineAdapterGetter item, MatchingList list)
         {
             if (item?.VirtualMachineAdapter?.Scripts == null)
@@ -466,12 +557,7 @@ namespace ItemTagger.ItemTypeFinder
 
         private bool IsBlacklistedByKeyword(IKeywordedGetter<IKeywordGetter> item)
         {
-            if (item.Keywords == null)
-            {
-                return false;
-            }
-
-            return itemTypeData.blacklistKeyword.matchesAny(GetKeywordEdids(item));
+            return itemTypeData.keywordsGlobalBlacklist.ItemHasAny(item);
         }
 
         private bool IsBlacklistedByName(string? name)
