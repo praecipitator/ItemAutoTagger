@@ -1,15 +1,6 @@
-using Noggog;
-using Synthesis.Bethesda.DTO;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 using Mutagen.Bethesda.FormKeys.Fallout4;
-using Mutagen.Bethesda.Plugins;
+using Mutagen.Bethesda.Fallout4;
 
 namespace ItemTagger.ItemTypeFinder
 {
@@ -44,25 +35,24 @@ namespace ItemTagger.ItemTypeFinder
         public readonly MatchingList edidListSettings = new();
         public readonly MatchingList nameListSettings = new();
 
-
-        public readonly MatchingList soundListFood = new();
-        public readonly MatchingList soundListChem = new();
-        public readonly MatchingList soundListDevice = new();
-        public readonly MatchingList soundListTool = new();
-
         // keywords
-        public readonly MatchingKeywordList keywordsWeaponMelee = new();
-        public readonly MatchingKeywordList keywordsGlobalBlacklist = new();
-        public readonly MatchingKeywordList keywordsPerkmag = new();
-        public readonly MatchingKeywordList keywordsQuest = new();
+        public readonly MatchingFormList<IKeywordGetter> keywordsWeaponMelee = new();
+        public readonly MatchingFormList<IKeywordGetter> keywordsGlobalBlacklist = new();
+        public readonly MatchingFormList<IKeywordGetter> keywordsPerkmag = new();
+        public readonly MatchingFormList<IKeywordGetter> keywordsQuest = new();
 
-        public readonly MatchingKeywordList keywordListDrink = new();
+        public readonly MatchingFormList<IKeywordGetter> keywordListDrink = new();
 
-        public readonly MatchingKeywordList keywordListFood = new();
-        public readonly MatchingKeywordList keywordListFoodDisease = new();
+        public readonly MatchingFormList<IKeywordGetter> keywordListFood = new();
+        public readonly MatchingFormList<IKeywordGetter> keywordListFoodDisease = new();
 
-        public readonly MatchingKeywordList keywordListDevice = new();
-        public readonly MatchingKeywordList keywordListChem = new();
+        public readonly MatchingFormList<IKeywordGetter> keywordListDevice = new();
+        public readonly MatchingFormList<IKeywordGetter> keywordListChem = new();
+        // sounds
+        public readonly MatchingFormList<ISoundDescriptorGetter> soundListFood = new();
+        public readonly MatchingFormList<ISoundDescriptorGetter> soundListChem = new();
+        public readonly MatchingFormList<ISoundDescriptorGetter> soundListDevice = new();
+        public readonly MatchingFormList<ISoundDescriptorGetter> soundListTool = new();
 
 
         // regexes? regices? regex objects for matching special stuff
@@ -116,7 +106,6 @@ namespace ItemTagger.ItemTypeFinder
             blacklistScript.addPrefixMatch("SimSettlementsV2:HQ:");
             blacklistScript.addPrefixMatch("SimSettlementsV2:MiscObjects:Unlockable");
 
-
             blacklistEdid.addPrefixMatch("DN015_NoneNameMisc");
             blacklistEdid.addPrefixMatch("DummyNoEdit_");
             blacklistEdid.addPrefixMatch("SS2_NameHolder_");
@@ -144,8 +133,6 @@ namespace ItemTagger.ItemTypeFinder
             blacklistEdid.addPrefixMatch("GasTrapDummy");
             blacklistEdid.addPrefixMatch("SS2C2_Nameholder_");
             blacklistEdid.addPrefixMatch("SS2_HQWorkerSelectForm_");
-
-            
 
             whitelistModelTool.addExactMatch("autobuildplots\\weapons\\hammer\\hammer.nif");
             whitelistModelTool.addExactMatch("props\\smithingtools\\smithingtoolhammer01a.nif");
@@ -291,20 +278,19 @@ namespace ItemTagger.ItemTypeFinder
             keywordListChem.Add(Fallout4.Keyword.HC_CausesImmunodeficiency);
             keywordListChem.Add(Fallout4.Keyword.HC_SustenanceType_IncreasesHunger);
 
-            soundListFood.addExactMatch("NPCHumanEatChewy");
-            soundListFood.addExactMatch("NPCHumanEatGeneric");
-            soundListFood.addExactMatch("NPCHumanEatEgg");
-            soundListFood.addExactMatch("NPCHumanEatSoup");
-            soundListFood.addExactMatch("NPCHumanEatSoupSlurp");
+            soundListFood.Add(Fallout4.SoundDescriptor.NPCHumanEatChewy);
+            soundListFood.Add(Fallout4.SoundDescriptor.NPCHumanEatGeneric);
+            soundListFood.Add(Fallout4.SoundDescriptor.NPCHumanEatEgg);
+            soundListFood.Add(Fallout4.SoundDescriptor.NPCHumanEatSoup);
+            soundListFood.Add(Fallout4.SoundDescriptor.NPCHumanEatSoupSlurp);
 
-            soundListChem.addExactMatch("NPCHumanEatMentats");
-            soundListChem.addExactMatch("NPCHumanChemsPsycho");
-            soundListChem.addExactMatch("NPCHumanChemsUseJet");
-            soundListChem.addExactMatch("NPCHumanChemsAddictol");
+            soundListChem.Add(Fallout4.SoundDescriptor.NPCHumanEatMentats);
+            soundListChem.Add(Fallout4.SoundDescriptor.NPCHumanChemsPsycho);
+            soundListChem.Add(Fallout4.SoundDescriptor.NPCHumanChemsUseJet);
+            soundListChem.Add(Fallout4.SoundDescriptor.NPCHumanChemsAddictol);
 
-            soundListDevice.addExactMatch("OBJStealthBoyActivate");
-
-            soundListTool.addExactMatch("NPCHumanWhistleDog");
+            soundListDevice.Add(Fallout4.SoundDescriptor.OBJStealthBoyActivate);
+            soundListTool.Add(Fallout4.SoundDescriptor.NPCHumanWhistleDog);
         }
     }
 }

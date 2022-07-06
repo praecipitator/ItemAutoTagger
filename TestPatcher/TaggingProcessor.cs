@@ -25,14 +25,6 @@ namespace ItemTagger
         // remove leading ' - ' and following '{{{foo}}}'
         private static readonly Regex TAG_CLEAN_NAME = new(@"^\s*-\s+|\s+{{{[^{}]*}}}\s*$", RegexOptions.Compiled);
 
-        // INNRs
-        //private static readonly FormKey fkInnrCommonMelee = FormKey.Factory()
-        private IInstanceNamingRulesGetter? innrCommonMelee = null;
-        private IInstanceNamingRulesGetter? innrCommonArmor = null;
-        private IInstanceNamingRulesGetter? innrPowerArmor = null;
-        private IInstanceNamingRulesGetter? innrClothes = null;
-        private IInstanceNamingRulesGetter? innrCommonGun = null;
-        private IInstanceNamingRulesGetter? innrVaultSuit = null;
         public TaggingProcessor(
             TaggingConfiguration taggingConf,
             TaggerSettings settings,
@@ -46,12 +38,6 @@ namespace ItemTagger
             itemTyper = new ItemTyper(state);
         }
 
-        private void loadInnrs()
-        {
-           // innrClothes = state.LinkCache.Resolve<IInstanceNamingRulesGetter>(Fallout4.InstanceNamingRules.dn_Clothes);
-            //state.LinkCache.TryResolve("foo", innrCommonMelee)
-        }
-
         public void Process()
         {
             ProcessMiscs();
@@ -62,13 +48,87 @@ namespace ItemTagger
             ProcessAlch();
             // now, equipment
             ProcessWeapons();
+            ProcessArmors();
+        }
+
+        private void ProcessArmors()
+        {
+            foreach(var armor in state.LoadOrder.PriorityOrder.Armor().WinningOverrides())
+            {
+                var prevName = armor.Name?.String;
+
+                if (prevName.IsNullOrEmpty() || !ShouldTag(prevName))
+                {
+                    continue;
+                }
+
+                var curType = itemTyper.GetArmorType(armor);
+                switch(curType)
+                {
+                    case ItemType.Armor:
+                    case ItemType.Clothes:
+                    case ItemType.VaultSuit:
+                    case ItemType.PowerArmor:
+                        ProcessRegularArmor(armor, curType);
+                        break;
+                    default:
+                        TagItem(prevName, armor, curType, state.PatchMod.Armors);
+                        break;
+                }
+            }
+        }
+
+        private void ProcessRegularArmor(IArmorGetter armor, ItemType armorType)
+        {
+            // TODO: check this weapon's INNR, if it has any.
+            // do we even need to process this?
+            if (!armor.InstanceNaming.IsNull && armor.ObjectTemplates?.Count > 0)
+            {
+                return;
+            }
+
+            var newOverride = state.PatchMod.Armors.GetOrAddAsOverride(armor);
+
+            // armorType
+            // set an INNR
+            if (armor.InstanceNaming.IsNull)
+            {
+                switch(armorType)
+                {
+                    case ItemType.VaultSuit:
+                        newOverride.InstanceNaming.SetTo(Fallout4.InstanceNamingRules.dn_VaultSuit);
+                        break;
+                    case ItemType.PowerArmor:
+                        newOverride.InstanceNaming.SetTo(Fallout4.InstanceNamingRules.dn_PowerArmor);
+                        break;
+                    case ItemType.Clothes:
+                        newOverride.InstanceNaming.SetTo(Fallout4.InstanceNamingRules.dn_Clothes);
+                        break;
+                    default:
+                        newOverride.InstanceNaming.SetTo(Fallout4.InstanceNamingRules.dn_Clothes);
+                        break;
+
+                }
+
+            }
+
+
+            if (0 == (armor.ObjectTemplates?.Count ?? 0))
+            {
+                newOverride.ObjectTemplates ??= new();
+                newOverride.ObjectTemplates.Add(new ObjectTemplate<Armor.Property>()
+                {
+                    Default = true,
+                    AddonIndex = -1
+                });
+            }
+
         }
 
         private void ProcessWeapons()
         {
             foreach(var weap in state.LoadOrder.PriorityOrder.Weapon().WinningOverrides())
             {
-                //weap.ObjectTemplates
                 var prevName = weap.Name?.String;
 
                 if (prevName.IsNullOrEmpty() || !ShouldTag(prevName))
@@ -77,16 +137,16 @@ namespace ItemTagger
                 }
 
                 var curType = itemTyper.GetWeaponType(weap);
-                if(curType != ItemType.WeaponRanged && curType != ItemType.WeaponMelee)
+
+                switch(curType)
                 {
-                    // for non-guns, just tag like any other item
-                    // maybe ensure the REMOVAL of templates and INNRs here?
-                    TagItem(prevName, weap, curType, state.PatchMod.Weapons);
-                } 
-                else
-                {
-                    // do the INNR/template thing
-                    ProcessRegularWeapon(weap, curType);
+                    case ItemType.WeaponRanged:
+                    case ItemType.WeaponMelee:
+                        ProcessRegularWeapon(weap, curType);
+                        break;
+                    default:
+                        TagItem(prevName, weap, curType, state.PatchMod.Weapons);
+                        break;
                 }
             }
         }
@@ -116,17 +176,14 @@ namespace ItemTagger
 
             }
 
-            if(weapon.ObjectTemplates == null || weapon.ObjectTemplates.Count == 0)
+            if((weapon.ObjectTemplates?.Count ?? 0) == 0)
             {
                 newOverride.ObjectTemplates ??= new();
-                if(newOverride.ObjectTemplates.Count == 0)
+                newOverride.ObjectTemplates.Add(new ObjectTemplate<Weapon.Property>()
                 {
-                    newOverride.ObjectTemplates.Add(new ObjectTemplate<Weapon.Property>()
-                    {
-                        Default = true,
-                        AddonIndex = -1
-                    });
-                }
+                    Default = true,
+                    AddonIndex = -1
+                });
             }
          
         }
@@ -372,7 +429,7 @@ namespace ItemTagger
             {
                 return true;
             }
-
+            // why is [Perk: Mag] Exercise Machines Blueprints valid?
             return !taggingConfig.isTagValid(existingTag);
         }
     }

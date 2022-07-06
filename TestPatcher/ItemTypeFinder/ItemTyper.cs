@@ -1,3 +1,4 @@
+using ItemTagger.Helper;
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.Fallout4;
 using Mutagen.Bethesda.FormKeys.Fallout4;
@@ -71,11 +72,11 @@ namespace ItemTagger.ItemTypeFinder
 
     public class ItemTyper
     {
-        private IPatcherState<IFallout4Mod, IFallout4ModGetter> patcherState;
+        private readonly IPatcherState<IFallout4Mod, IFallout4ModGetter> patcherState;
 
-        private Dictionary<FormKey, FormKey> looseModToOmodLookup = new Dictionary<FormKey, FormKey>();
+        private readonly Dictionary<FormKey, FormKey> looseModToOmodLookup = new();
 
-        private ItemTypeData itemTypeData = new();
+        private readonly ItemTypeData itemTypeData = new();
 
         public ItemTyper(IPatcherState<IFallout4Mod, IFallout4ModGetter> state)
         {
@@ -84,11 +85,35 @@ namespace ItemTagger.ItemTypeFinder
             LoadDictionaries();
         }
 
-        private IEnumerable<string> GetKeywordEdids(IKeywordedGetter<IKeywordGetter> item)
+        public ItemType GetArmorType(IArmorGetter armor)
         {
-            return item.Keywords?
-                .Select(kw => kw.TryResolve(patcherState.LinkCache)?.EditorID)
-                .NotNull() ?? new List<string>();
+            if (armor.MajorFlags.HasFlag(Armor.MajorFlag.NonPlayable) || IsScriptedItemBlacklisted(armor))
+            {
+                return ItemType.None;
+            }
+
+            if(armor.BipedBodyTemplate != null && armor.BipedBodyTemplate.FirstPersonFlags.HasFlag(BipedObjectFlag.Pipboy))
+            {
+                return ItemType.PipBoy;
+            }
+
+            // otherwise, this is one of the 4 armor types
+            if(armor.HasKeyword(Fallout4.Keyword.VaultSuitKeyword))
+            {
+                return ItemType.VaultSuit;
+            }
+
+            if(armor.HasKeyword(Fallout4.Keyword.ArmorTypePower))
+            {
+                return ItemType.PowerArmor;
+            }
+
+            if(armor.ArmorRating == 0)
+            {
+                return ItemType.Clothes;
+            }
+
+            return ItemType.Armor;
         }
 
         public ItemType GetWeaponType(IWeaponGetter weapon)
@@ -99,28 +124,30 @@ namespace ItemTagger.ItemTypeFinder
                 return ItemType.None;
             }
 
+            if (IsScriptedItemBlacklisted(weapon))
+            {
+                return ItemType.None;
+            }
+
             // ammo?
-            if(!weapon.Ammo.IsNull)
+            if (!weapon.Ammo.IsNull)
             {
                 // this thing uses ammo, so not an explosive
-                if(itemTypeData.keywordsWeaponMelee.ItemHasAny(weapon))
+                if(weapon.HasAnyKeyword(itemTypeData.keywordsWeaponMelee)) 
                 {
                     return ItemType.WeaponMelee;
                 }
                 return ItemType.WeaponRanged;
             }
 
-            var kwEdids = this.GetKeywordEdids(weapon);
-            if(kwEdids.Contains("WeaponTypeGrenade"))
+            if(weapon.HasKeyword(Fallout4.Keyword.WeaponTypeGrenade))
             {
                 return ItemType.Grenade;
             }
 
-            var equipType = weapon.EquipmentType.TryResolve(patcherState.LinkCache);
-
-            if (equipType?.EditorID == "GrenadeSlot")
+            if(weapon.EquipmentType.Equals(Fallout4.EquipType.GrenadeSlot))
             {
-                if(kwEdids.Contains("AnimsMine"))
+                if(weapon.HasKeyword(Fallout4.Keyword.AnimsMine))
                 {
                     return ItemType.Mine;
                 }
@@ -141,7 +168,7 @@ namespace ItemTagger.ItemTypeFinder
                 return ItemType.Grenade;
             }
 
-            if (itemTypeData.keywordsWeaponMelee.ItemHasAny(weapon))
+            if (weapon.HasAnyKeyword(itemTypeData.keywordsWeaponMelee))
             {
                 return ItemType.WeaponMelee;
             }
@@ -162,7 +189,6 @@ namespace ItemTagger.ItemTypeFinder
                 return ItemType.None;
             }
 
-            var keywordEdids = this.GetKeywordEdids(alch);
             if(alch.HasKeyword(Fallout4.Keyword.ObjectTypeSyringerAmmo))
             {
                 return ItemType.Syringe;
@@ -180,17 +206,17 @@ namespace ItemTagger.ItemTypeFinder
 
             
             // do food first, so that stuff with both drink and food KWs get classified as food
-            if(itemTypeData.keywordListFood.ItemHasAny(alch))
+            if(alch.HasAnyKeyword(itemTypeData.keywordListFood))
             {
                 return GetFoodType(alch);
             }
 
-            if(itemTypeData.keywordListDrink.ItemHasAny(alch))
+            if(alch.HasAnyKeyword(itemTypeData.keywordListDrink))
             {
                 // generic drink
                 return ItemType.Drink; 
             }
-            if(itemTypeData.keywordListDevice.ItemHasAny(alch))
+            if(alch.HasAnyKeyword(itemTypeData.keywordListDevice))
             {
                 return ItemType.Device;
             }
@@ -198,7 +224,7 @@ namespace ItemTagger.ItemTypeFinder
             // now, check addiction
             var isAddictive = !alch.Addiction.IsNull;
 
-            if(itemTypeData.keywordListChem.ItemHasAny(alch))
+            if(alch.HasAnyKeyword(itemTypeData.keywordListChem))
             {
                 if(isAddictive)
                 {
@@ -219,19 +245,20 @@ namespace ItemTagger.ItemTypeFinder
             }
 
             // now try sound
-            var soundEdid = alch.ConsumeSound.TryResolve(patcherState.LinkCache)?.EditorID;
-            if(soundEdid != null)
+            if (!alch.ConsumeSound.IsNull)
             {
-                if(soundEdid == "NPCHumanDrinkGeneric")
+                // this seems to work
+                if (alch.ConsumeSound.Equals(Fallout4.SoundDescriptor.NPCHumanDrinkGeneric))
                 {
-                    if(isAddictive)
+                    if (isAddictive)
                     {
                         return ItemType.Liquor;
                     }
                     return ItemType.Drink;
                 }
 
-                if(itemTypeData.soundListFood.matches(soundEdid))
+                if(alch.ConsumeSound.IsAnyOf(itemTypeData.soundListFood))
+                //if(itemTypeData.soundListFood.SoundConsumeIsAny(alch))
                 {
                     var isFoodItem = alch.Flags.HasFlag(Ingestible.Flag.FoodItem);
                     var isMedicine = alch.Flags.HasFlag(Ingestible.Flag.Medicine);
@@ -247,7 +274,8 @@ namespace ItemTagger.ItemTypeFinder
                     return GetFoodType(alch);
                 }
 
-                if(itemTypeData.soundListChem.matches(soundEdid))
+                if (alch.ConsumeSound.IsAnyOf(itemTypeData.soundListChem))
+                //if (itemTypeData.soundListChem.SoundConsumeIsAny(alch))
                 {
                     if(isAddictive)
                     {
@@ -256,12 +284,14 @@ namespace ItemTagger.ItemTypeFinder
                     return ItemType.GoodChem;
                 }
 
-                if(itemTypeData.soundListDevice.matches(soundEdid))
+                if (alch.ConsumeSound.IsAnyOf(itemTypeData.soundListDevice))
+                //if (itemTypeData.soundListDevice.SoundConsumeIsAny(alch))
                 {
                     return ItemType.Device;
                 }
 
-                if (itemTypeData.soundListTool.matches(soundEdid))
+                if (alch.ConsumeSound.IsAnyOf(itemTypeData.soundListTool))
+                //if (itemTypeData.soundListTool.SoundConsumeIsAny(alch))
                 {
                     return ItemType.Tool;
                 }
@@ -277,7 +307,12 @@ namespace ItemTagger.ItemTypeFinder
 
         private ItemType GetFoodType(IIngestibleGetter food)
         {
-            var hasRads = food.Effects.Any(eff => eff.BaseEffect.TryResolve(patcherState.LinkCache)?.EditorID == "DamageRadiationChem");
+            //var hasRads = food.Effects.Contains(Fallout4.MagicEffect.DamageRadiationChem);
+            //var hasRads = food.Effects.Any(eff => eff.BaseEffect.Equals(Fallout4.MagicEffect.DamageRadiationChem));
+
+            var hasRads = food.HasEffect(Fallout4.MagicEffect.DamageRadiationChem);
+
+            //var hasRads = food.Effects.Any(eff => eff.BaseEffect.TryResolve(patcherState.LinkCache)?.EditorID == "DamageRadiationChem");
             //food.Effects.Select(eff => eff.BaseEffect.TryResolve(patcherState.LinkCache)?.EditorID);
             if(!hasRads)
             {
@@ -288,7 +323,7 @@ namespace ItemTagger.ItemTypeFinder
                 return ItemType.FoodCrop;
             }
 
-            if(itemTypeData.keywordListFoodDisease.ItemHasAny(food))
+            if(food.HasAnyKeyword(itemTypeData.keywordListFoodDisease))
             {
                 return ItemType.FoodRaw;
             }
@@ -351,15 +386,12 @@ namespace ItemTagger.ItemTypeFinder
                 return ItemType.None;
             }
             var modelName = book.Model?.File;
-            if (itemTypeData.whitelistModelNews.matches(modelName) || HasAnyScript(book, itemTypeData.scriptListNews))
+            if (itemTypeData.whitelistModelNews.matches(modelName) || book.HasAnyScript(itemTypeData.scriptListNews))
             {
                 return ItemType.News;
             }
-
-            //IEnumerable<string> keywordEdids = GetKeywordEdids(book);
-
             
-            if(itemTypeData.keywordsPerkmag.ItemHasAny(book) || HasAnyScript(book, itemTypeData.scriptListPerkMag))
+            if(book.HasAnyKeyword(itemTypeData.keywordsPerkmag) || book.HasAnyScript(itemTypeData.scriptListPerkMag))
             {
                 return ItemType.Perkmag;
             }
@@ -418,12 +450,11 @@ namespace ItemTagger.ItemTypeFinder
             }
 
 
-            if (HasAnyScript(miscItem, itemTypeData.scriptListPipBoy)) {
+            if (miscItem.HasAnyScript(itemTypeData.scriptListPipBoy)) {
                 return ItemType.PipBoy;
             }
 
             if (miscItem.HasKeyword(Fallout4.Keyword.ObjectTypeLooseMod) || IsLooseMod(miscItem))
-            //if (keywordEdids.Contains("ObjectTypeLooseMod") || IsLooseMod(miscItem))
             {
                 return ItemType.LooseMod;
             }
@@ -433,7 +464,7 @@ namespace ItemTagger.ItemTypeFinder
             {
                 // shipment, scrap, or resource
                 // could theoretically also be a scrappable loose mod
-                if(HasScript(miscItem, "ShipmentScript"))
+                if(miscItem.HasScript("ShipmentScript"))
                 {
                     return ItemType.Shipment;
                 }
@@ -458,7 +489,7 @@ namespace ItemTagger.ItemTypeFinder
                 return ItemType.Collectible;
             }
 
-            if (itemTypeData.keywordsQuest.ItemHasAny(miscItem))
+            if (miscItem.HasAnyKeyword(itemTypeData.keywordsQuest))
             {
                 return ItemType.Quest;
             }
@@ -498,7 +529,7 @@ namespace ItemTagger.ItemTypeFinder
         {
             return looseModToOmodLookup.ContainsKey(miscItem.FormKey);
         }
-
+        /*
         private static bool HasScript(IHaveVirtualMachineAdapterGetter item, String scriptName)
         {
             if (item?.VirtualMachineAdapter?.Scripts == null)
@@ -533,7 +564,7 @@ namespace ItemTagger.ItemTypeFinder
             }
             return false;
         }
-
+        */
         private bool IsScriptedItemBlacklisted<T>(T item)
             where T: IHaveVirtualMachineAdapterGetter, ITranslatedNamedRequiredGetter, IMajorRecordGetter, IKeywordedGetter<IKeywordGetter>
         {
@@ -557,7 +588,7 @@ namespace ItemTagger.ItemTypeFinder
 
         private bool IsBlacklistedByKeyword(IKeywordedGetter<IKeywordGetter> item)
         {
-            return itemTypeData.keywordsGlobalBlacklist.ItemHasAny(item);
+            return item.HasAnyKeyword(itemTypeData.keywordsGlobalBlacklist);
         }
 
         private bool IsBlacklistedByName(string? name)
@@ -579,7 +610,6 @@ namespace ItemTagger.ItemTypeFinder
 
             return itemTypeData.blacklistEdid.matches(edid);
         }
-
         private bool IsBlacklistedByScript(IHaveVirtualMachineAdapterGetter item)
         {
             if(item.VirtualMachineAdapter?.Scripts == null)
