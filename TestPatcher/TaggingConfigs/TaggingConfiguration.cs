@@ -1,4 +1,5 @@
 using ItemTagger.ItemTypeFinder;
+using System.Text.RegularExpressions;
 
 namespace ItemTagger.TaggingConfigs
 {
@@ -6,6 +7,7 @@ namespace ItemTagger.TaggingConfigs
     {
         private readonly List<string> extraValidTags = new();
 
+        private static readonly Regex TAG_EXTRACT_REGEX = new(@"^[\[\]()|{}]([^\[\]()|{}]+)[\[\]()|{}]$", RegexOptions.Compiled);
         public TaggingConfiguration
             (
                 string tagShipment,
@@ -94,46 +96,61 @@ namespace ItemTagger.TaggingConfigs
 
             this.extraValidTags = extraValidTags;
 
-            this.extraValidTags.Add(tagShipment);
-            this.extraValidTags.Add(tagScrap);
-            this.extraValidTags.Add(tagResource);
-            this.extraValidTags.Add(tagLooseMod);
-            this.extraValidTags.Add(tagCollectible);
-            this.extraValidTags.Add(tagQuest);
-            this.extraValidTags.Add(tagCurrency);
-            this.extraValidTags.Add(tagValuable);
-            this.extraValidTags.Add(tagOtherMisc);
-            this.extraValidTags.Add(tagGoodChem);
-            this.extraValidTags.Add(tagBadChem);
-            this.extraValidTags.Add(tagFood);
-            this.extraValidTags.Add(tagFoodRaw);
-            this.extraValidTags.Add(tagFoodCrop);
-            this.extraValidTags.Add(tagFoodPrewar);
-            this.extraValidTags.Add(tagDrink);
-            this.extraValidTags.Add(tagLiquor);
-            this.extraValidTags.Add(tagNukacola);
-            this.extraValidTags.Add(tagSyringe);
-            this.extraValidTags.Add(tagDevice);
-            this.extraValidTags.Add(tagTool);
-            this.extraValidTags.Add(tagNews);
-            this.extraValidTags.Add(tagNote);
-            this.extraValidTags.Add(tagPerkmag);
-            this.extraValidTags.Add(tagMine);
-            this.extraValidTags.Add(tagGrenade);
-            this.extraValidTags.Add(tagKey);
-            this.extraValidTags.Add(tagKeyCard);
-            this.extraValidTags.Add(tagKeyPassword);
-            this.extraValidTags.Add(tagAmmo);
-            this.extraValidTags.Add(tagHolotape);
-            this.extraValidTags.Add(tagHolotapeGame);
-            this.extraValidTags.Add(tagHolotapeSettings);
-            this.extraValidTags.Add(tagPipBoy);
-            this.extraValidTags.Add(tagWeaponRanged);
-            this.extraValidTags.Add(tagWeaponMelee);
-            this.extraValidTags.Add(tagArmor);
-            this.extraValidTags.Add(tagClothes);
-            this.extraValidTags.Add(tagVaultSuit);
-            this.extraValidTags.Add(tagPowerArmor);
+            addExtraTag(tagShipment);
+            addExtraTag(tagScrap);
+            addExtraTag(tagResource);
+            addExtraTag(tagLooseMod);
+            addExtraTag(tagCollectible);
+            addExtraTag(tagQuest);
+            addExtraTag(tagCurrency);
+            addExtraTag(tagValuable);
+            addExtraTag(tagOtherMisc);
+            addExtraTag(tagGoodChem);
+            addExtraTag(tagBadChem);
+            addExtraTag(tagFood);
+            addExtraTag(tagFoodRaw);
+            addExtraTag(tagFoodCrop);
+            addExtraTag(tagFoodPrewar);
+            addExtraTag(tagDrink);
+            addExtraTag(tagLiquor);
+            addExtraTag(tagNukacola);
+            addExtraTag(tagSyringe);
+            addExtraTag(tagDevice);
+            addExtraTag(tagTool);
+            addExtraTag(tagNews);
+            addExtraTag(tagNote);
+            addExtraTag(tagPerkmag);
+            addExtraTag(tagMine);
+            addExtraTag(tagGrenade);
+            addExtraTag(tagKey);
+            addExtraTag(tagKeyCard);
+            addExtraTag(tagKeyPassword);
+            addExtraTag(tagAmmo);
+            addExtraTag(tagHolotape);
+            addExtraTag(tagHolotapeGame);
+            addExtraTag(tagHolotapeSettings);
+            addExtraTag(tagPipBoy);
+            addExtraTag(tagWeaponRanged);
+            addExtraTag(tagWeaponMelee);
+            addExtraTag(tagArmor);
+            addExtraTag(tagClothes);
+            addExtraTag(tagVaultSuit);
+            addExtraTag(tagPowerArmor);
+        }
+
+        private void addExtraTag(string fullTag)
+        {
+            // remove the brackets.
+            // TODO maybe just use substring?
+            var matches = TAG_EXTRACT_REGEX.Match(fullTag);
+
+            if (matches.Groups.Count < 2)
+            {
+                return;
+            }
+
+            var tag = matches.Groups[1].Value;
+            extraValidTags.Add(tag);
         }
 
         public bool isTagValid(string tag)

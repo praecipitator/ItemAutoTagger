@@ -347,7 +347,6 @@ namespace ItemTagger.ItemTypeFinder
                 {
                     return ItemType.None;
                 }
-
             
                 switch(holotape.Data)
                 {
