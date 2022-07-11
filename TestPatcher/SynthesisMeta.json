@@ -1,9 +1,0 @@
-{
-  "Nickname": "ItemTagger",
-  "Visibility": "Visible",
-  "OneLineDescription": "Tags items for inventory/sorting mods",
-  "LongDescription": "Adds tags to items, for usage with inventory/sorting mods.\r\nSupports FIS, VIS, VIS-G, LWIS, and Horizon (tags only).\r\nBeta. Use at your own risk!",
-  "PreferredAutoVersioning": "Default",
-  "RequiredMods": [],
-  "TargetedReleases": []
-}
