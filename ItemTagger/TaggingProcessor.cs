@@ -8,6 +8,7 @@ using Mutagen.Bethesda.Plugins.Aspects;
 using Noggog;
 using Mutagen.Bethesda.Plugins.Exceptions;
 using Mutagen.Bethesda.FormKeys.Fallout4;
+using ItemTypeFinder.Settings;
 
 namespace ItemTagger
 {
@@ -27,6 +28,7 @@ namespace ItemTagger
         public TaggingProcessor(
             TaggingConfiguration taggingConf,
             TaggerSettings settings,
+            TyperSettings typerSettings,
             IPatcherState<IFallout4Mod, IFallout4ModGetter> state
         )
         {
@@ -34,7 +36,7 @@ namespace ItemTagger
             this.state = state;
             this.settings = settings;
 
-            itemTyper = new ItemTyper(state, settings.ItemTypeConfig);
+            itemTyper = new ItemTyper(state, typerSettings.ItemTypeConfig);
         }
 
         public void Process()
