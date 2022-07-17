@@ -34,8 +34,7 @@ namespace ItemTagger
             var processor = new TaggingProcessor(taggingConfig, Settings, state);
             // actually run the thing
             processor.Process();
-        }       
-
+        }
 
         private static TaggingConfiguration getTaggingConfigByType(TaggingConfigType type)
         {

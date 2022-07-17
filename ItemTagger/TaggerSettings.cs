@@ -4,7 +4,6 @@ using Mutagen.Bethesda.Fallout4;
 using Mutagen.Bethesda.Plugins;
 using Mutagen.Bethesda.Plugins.Records;
 using Mutagen.Bethesda.Synthesis.Settings;
-using Mutagen.Bethesda.WPF.Reflection.Attributes;
 using Noggog;
 
 namespace ItemTagger
