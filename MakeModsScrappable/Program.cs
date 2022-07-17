@@ -2,8 +2,8 @@ using Mutagen.Bethesda;
 using Mutagen.Bethesda.Synthesis;
 using Mutagen.Bethesda.Fallout4;
 using Mutagen.Bethesda.Plugins;
-using System.Data.SqlTypes;
 using Mutagen.Bethesda.Plugins.Exceptions;
+using Noggog;
 
 namespace MakeModsScrappable
 {
@@ -31,23 +31,32 @@ namespace MakeModsScrappable
 
         internal class ModsScrapProcessor
         {
-            private ModsScrappableSettings settings;
-            private IPatcherState<IFallout4Mod, IFallout4ModGetter> state;
+            private readonly ModsScrappableSettings settings;
+            private readonly IPatcherState<IFallout4Mod, IFallout4ModGetter> state;
 
-            private readonly IEnumerable<FormKey> blackList;
+            private readonly SortedSet<FormKey> blackList = new(Comparer<FormKey>.Create((f1, f2) => f1.GetHashCode().CompareTo(f2.GetHashCode())));
 
             public ModsScrapProcessor(ModsScrappableSettings settings, IPatcherState<IFallout4Mod, IFallout4ModGetter> state)
             {
                 this.settings = settings;
                 this.state = state;
 
-                blackList = settings.excludeList.Select(fLink => fLink.FormKey) ?? new List<FormKey>();
+                //blackList
+                //blackList = settings.excludeList.Select(fLink => fLink.FormKey) ?? new List<FormKey>();
+                foreach(var entry in settings.excludeList)
+                {
+                    if(!blackList.Contains(entry.FormKey))
+                    {
+                        blackList.Add(entry.FormKey);
+                    }
+                }
             }
 
             public void Process()
             {
                 // begin with COBJs
-                foreach (var cobj in state.LoadOrder.PriorityOrder.ConstructibleObject().WinningOverrides())
+                var allCobjs = state.LoadOrder.PriorityOrder.ConstructibleObject().WinningOverrides();
+                foreach (var cobj in allCobjs)
                 {
                     try
                     {
@@ -62,17 +71,20 @@ namespace MakeModsScrappable
 
             private void ProcessCobj(IConstructibleObjectGetter cobj)
             {
-                // TODO maybe evaluate that:
-                // var numObjects = cobj.CreatedObjectCounts;
-                var craftResult = cobj.CreatedObject.TryResolve(state.LinkCache);
-
-                var omod = (craftResult as IAObjectModificationGetter);
-
-                if (omod == null)
+                // try this. It seems that OMOD COBJs don't have these two
+                if(!cobj.WorkbenchKeyword.IsNull || (cobj.Categories != null && cobj.Categories.Count > 0))
                 {
                     return;
                 }
 
+                var craftResult = cobj.CreatedObject.TryResolve(state.LinkCache);
+
+                var omod = (craftResult as IAObjectModificationGetter);
+
+                if (omod == null || omod.LooseMod.IsNull)
+                {
+                    return;
+                }
 
                 var miscOmod = omod.LooseMod.TryResolve(state.LinkCache);
                 if (null == miscOmod)
@@ -85,50 +97,50 @@ namespace MakeModsScrappable
                     return;
                 }
 
-                var scrapComponents = getScrapComponents(cobj.Components);
-                if (scrapComponents.Count == 0)
+                var scrapComponents = GetScrapComponents(cobj.Components);
+                
+                if (!scrapComponents.Any())
                 {
                     return;
                 }
 
-                // otherwise, create an override fort he misc
+                // otherwise, create an override for the misc
                 var newMisc = state.PatchMod.MiscItems.GetOrAddAsOverride(miscOmod);
                 newMisc.Components ??= new();
-                newMisc.Components.Clear();
+                if(newMisc.Components.Count > 0)
+                {
+                    newMisc.Components.Clear();
+                }
 
                 foreach(var pair in scrapComponents)
                 {
-                    var foo = new MiscItemComponent();
-                    foo.Component = pair.Item1;
-                    foo.Count = pair.Item2;
+                    MiscItemComponent foo = new()
+                    {
+                        Component = pair.Item1,
+                        Count = pair.Item2
+                    };
                     newMisc.Components.Add(foo);
-                    //newMisc.Components.
                 }
             }
 
-            private List<Tuple<IFormLink<IComponentGetter>, uint>> getScrapComponents(IReadOnlyList<IConstructibleObjectComponentGetter> compList)
+            private IEnumerable<Tuple<IFormLink<IComponentGetter>, uint>> GetScrapComponents(IReadOnlyList<IConstructibleObjectComponentGetter> compList)
             {
                 var result = new List<Tuple<IFormLink<IComponentGetter>, uint>>();
                 foreach (var entry in compList)
                 {
-                    var comp = entry.Component.TryResolve(state.LinkCache);
+                    // do this check before resolving
+                    var componentFormKey = entry.Component.FormKey;
+                    if (blackList.Contains(componentFormKey))
+                    {
+                        continue;
+                    }
                     double num = entry.Count;
-                    if(num <= 0 || null == comp)
+                    if (num <= 0)
                     {
                         continue;
                     }
 
-                    // is this a component?
-                    if(comp is not IComponentGetter)
-                    {
-                        continue;
-                    }
-                    var compLink = comp.ToLink<IComponentGetter>();
 
-                    if (blackList.Contains(comp.FormKey))
-                    {
-                        continue;
-                    }
                     num = settings.componentLossFactor * num;
                     
                     switch(settings.roundMode)
@@ -150,12 +162,21 @@ namespace MakeModsScrappable
                     }
                     uint numInt = (uint)num;
 
+                    // now do the resolve
+                    var comp = entry.Component.TryResolve(state.LinkCache);
+
+                    // is this a component?
+                    if (comp is not IComponentGetter)
+                    {
+                        continue;
+                    }
+
+                    var compLink = comp.ToLink<IComponentGetter>();
                     result.Add(new Tuple<IFormLink<IComponentGetter>, uint>(compLink, numInt));
                 }
 
                 return result;
             }
         }
-
     }
 }
