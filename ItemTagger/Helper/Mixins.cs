@@ -113,5 +113,15 @@ namespace ItemTagger.Helper
                 }
             }
         }
+
+        public static string GetDebugString(this IMajorRecordGetter item)
+        {
+            if(item.EditorID == null)
+            {
+                return item.FormKey.ToString();
+            }
+
+            return item.FormKey.ToString() + " " + item.EditorID;
+        }
     }
 }

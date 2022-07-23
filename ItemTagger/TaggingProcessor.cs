@@ -8,17 +8,18 @@ using Mutagen.Bethesda.Plugins.Aspects;
 using Noggog;
 using Mutagen.Bethesda.Plugins.Exceptions;
 using Mutagen.Bethesda.FormKeys.Fallout4;
+using ItemTagger.Helper;
 
 namespace ItemTagger
 {
     internal class TaggingProcessor
     {
-        private TaggingConfiguration taggingConfig;
+        private readonly TaggingConfiguration taggingConfig;
 
-        private TaggerSettings settings;
+        private readonly TaggerSettings settings;
         private IPatcherState<IFallout4Mod, IFallout4ModGetter> state;
 
-        private ItemTyper itemTyper;
+        private readonly ItemTyper itemTyper;
 
         private static readonly Regex TAG_EXTRACT_REGEX = new(@"^[\[\]()|{}]([^\[\]()|{}]+)[\[\]()|{}].+$", RegexOptions.Compiled);
         // remove leading ' - ' and following '{{{foo}}}'
@@ -90,20 +91,18 @@ namespace ItemTagger
                 return;
             }
 
+            // now, special case: if this thing has INNRs, don't actually prefix it. Assume it's INNRs are correct.
+            if (!item.InstanceNaming.IsNull)
+            {
+                //item.FormKey.ToString
+                Console.WriteLine("Not tagging " + item.GetDebugString() + " with " + prefix + ", because it has INNRs");
+                return;
+            }
+
             var nameBase = TAG_CLEAN_NAME.Replace(prevName, "").Trim();
 
             var newItem = state.PatchMod.Armors.GetOrAddAsOverride(item);
             newItem.Name = prefix + " " + nameBase;
-
-            if (!newItem.InstanceNaming.IsNull)
-            {
-                newItem.InstanceNaming.Clear();
-            }
-
-            if (newItem.ObjectTemplates != null)
-            {
-                newItem.ObjectTemplates = null;
-            }
         }
 
         private void ProcessArmorWithINNRs(IArmorGetter armor, ItemType armorType)
@@ -189,20 +188,18 @@ namespace ItemTagger
                 return;
             }
 
-            var nameBase = TAG_CLEAN_NAME.Replace(prevName, "").Trim();
+            // now, special case: if this thing has INNRs, don't actually prefix it. Assume it's INNRs are correct.
+            if(!item.InstanceNaming.IsNull)
+            {
+                //item.FormKey.ToString
+                Console.WriteLine("Not tagging " + item.GetDebugString() + " with " + prefix + ", because it has INNRs");
+                return;
+            }
 
             var newItem = state.PatchMod.Weapons.GetOrAddAsOverride(item);
+            var nameBase = TAG_CLEAN_NAME.Replace(prevName, "").Trim();
+
             newItem.Name = prefix + " " + nameBase;
-
-            if (!newItem.InstanceNaming.IsNull)
-            {
-                newItem.InstanceNaming.Clear();
-            }
-
-            if(newItem.ObjectTemplates != null)
-            {
-                newItem.ObjectTemplates = null;
-            }
         }
 
         private void ProcessWeaponWithINNRs(IWeaponGetter weapon, ItemType type)
