@@ -51,6 +51,22 @@ namespace ItemTagger
             ProcessArmors();
         }
 
+        private string GetTaggedName(string newTag, string inputName, string suffix = "")
+        {
+            if(taggingConfig.HasDeprecatedTags())
+            {
+                var existingTag = ExtractTag(inputName);
+                if(taggingConfig.IsTagDeprecated(existingTag))
+                {
+                    // strip existing tag
+                    // should be the length of existingTag+3
+                    inputName = inputName[(existingTag.Length + 3)..];
+                }
+            }
+
+            return newTag + " " + inputName + suffix;
+        }
+
         private void ProcessArmors()
         {
             foreach(var armor in state.LoadOrder.PriorityOrder.Armor().WinningOverrides())
@@ -102,7 +118,7 @@ namespace ItemTagger
             var nameBase = TAG_CLEAN_NAME.Replace(prevName, "").Trim();
 
             var newItem = state.PatchMod.Armors.GetOrAddAsOverride(item);
-            newItem.Name = prefix + " " + nameBase;
+            newItem.Name = GetTaggedName(prefix, nameBase);
         }
 
         private void ProcessArmorWithINNRs(IArmorGetter armor, ItemType armorType)
@@ -199,7 +215,9 @@ namespace ItemTagger
             var newItem = state.PatchMod.Weapons.GetOrAddAsOverride(item);
             var nameBase = TAG_CLEAN_NAME.Replace(prevName, "").Trim();
 
-            newItem.Name = prefix + " " + nameBase;
+            var newItem = state.PatchMod.Weapons.GetOrAddAsOverride(item);
+            
+            newItem.Name = GetTaggedName(prefix, nameBase);
         }
 
         private void ProcessWeaponWithINNRs(IWeaponGetter weapon, ItemType type)
@@ -425,14 +443,12 @@ namespace ItemTagger
             var nameBase = TAG_CLEAN_NAME.Replace(prevName, "").Trim();
 
             var newItem = group.GetOrAddAsOverride(item);
+            var suffix = "";
             if (null != components && components.Count > 0)
             {
-                newItem.Name = prefix + " " + nameBase + GetComponentString(components);
+                suffix = GetComponentString(components);
             }
-            else
-            {
-                newItem.Name = prefix + " " + nameBase;
-            }
+            newItem.Name = GetTaggedName(prefix, nameBase, suffix);
         }
 
         private void TagItem<T>(string prevName, IFallout4MajorRecordGetter item, ItemType type, Fallout4Group<T> group)
@@ -482,7 +498,7 @@ namespace ItemTagger
             {
                 return true;
             }
-            // why is [Perk: Mag] Exercise Machines Blueprints valid?
+
             return !taggingConfig.IsTagValid(existingTag);
         }
     }

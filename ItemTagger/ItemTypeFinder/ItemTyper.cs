@@ -181,6 +181,19 @@ namespace ItemTagger.ItemTypeFinder
                 return ItemType.None;
             }
 
+            // check the race.
+            // if the race is human, all is fine.
+            // if not, it can still be a usable, but not always
+            if(!armor.Race.Equals(Fallout4.Race.HumanRace))
+            {
+                if(armor.WorldModel == null || (armor.WorldModel.Male == null && armor.WorldModel.Female == null))
+                {
+                    // it *seems* that the various "skins" and "tans" never have these models, but regular items
+                    // have at least one
+                    return ItemType.None;
+                }
+            }
+
             // check this BEFORE non-playable
             if (armor.BipedBodyTemplate != null && armor.BipedBodyTemplate.FirstPersonFlags == BipedObjectFlag.Pipboy)
             {

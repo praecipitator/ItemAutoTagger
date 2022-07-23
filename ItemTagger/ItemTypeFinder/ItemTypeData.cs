@@ -144,7 +144,9 @@ namespace ItemTagger.ItemTypeFinder
                 "GasTrapDummy",
                 "SS2C2_Nameholder_",
                 "SS2_HQWorkerSelectForm_",
-                "kgSIM_TextReplace_"
+                "kgSIM_TextReplace_",
+                "SS2RotC_PluginName_",
+                "SS2RotC_CPDesigner_"
              );
 
             whitelistModelTool.AddExactMatch(

@@ -86,7 +86,7 @@ namespace ItemTagger
                 { ItemType.VaultSuit,           Settings.CustomConfig.tagVaultSuit },
                 { ItemType.PowerArmor,          Settings.CustomConfig.tagPowerArmor },
             };
-            customConfig.AddExtraTags(Settings.CustomConfig.extraValidTags);
+            customConfig.AddExtraTags(Settings.CustomConfig.extraValidTags.ToArray());
 
             return customConfig;
         }
