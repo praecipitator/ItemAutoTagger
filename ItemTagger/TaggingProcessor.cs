@@ -214,8 +214,6 @@ namespace ItemTagger
 
             var newItem = state.PatchMod.Weapons.GetOrAddAsOverride(item);
             var nameBase = TAG_CLEAN_NAME.Replace(prevName, "").Trim();
-
-            var newItem = state.PatchMod.Weapons.GetOrAddAsOverride(item);
             
             newItem.Name = GetTaggedName(prefix, nameBase);
         }
