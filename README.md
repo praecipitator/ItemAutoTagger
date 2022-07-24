@@ -30,7 +30,13 @@ The **Extra Tags** setting below the individual tag fields can be used to put in
 
 
 ## Notice
-If you plan to use this alongside [MakeModsScrappable](https://github.com/praecipitator/MakeModsScrappable), and you want to use the option "Append components", make sure that MakeModsScrappable runs **before** ItemAutoTagger. Otherwise, ItemAutoTagger won't be able to append components to loose mods, because there aren't any, until MakeModsScrappable ran on them.
+This patcher should run after any other item-modifying patchers, like [MakeModsScrappable](https://github.com/praecipitator/MakeModsScrappable) or [MakeItemsWeightless](https://github.com/praecipitator/MakeItemsWeightless).
+Otherwise, it won't be taking the changes done by these patchers into account. 
+
+For example, if you enabled "Append Components", but ItemTagger is running before MakeModsScrappable, it will not append components to loose mods, because they don't have any components at that point.
+
+However, if MakeItemsWeightless with enabled weightless-making of Misc Items is running before ItemTagger, it will classify a lot more items as "Currency" than otherwise, because it considers anything as "Currency" which has value, but no weight.
+
 
 ## Item Types
 These are the types into which this patcher will categorize items for tagging:
