@@ -12,12 +12,12 @@ namespace ItemTagger
     {
         [SynthesisOrder]
         [SynthesisSettingName("Tagging Configuration")]
-        public TaggingConfigType TaggingConfig = TaggingConfigType.LWIS;
+        public TaggingConfigType TaggingConfig = TaggingConfigType.FIS;
 
         [SynthesisOrder]
         [SynthesisSettingName("Append components")]
         [SynthesisTooltip("If checked, component strings like {{{Wood,Steel}}} will be appended to scrappable items.")]
-        public bool UseComponentString = false;
+        public bool UseComponentString = true;
 
         [SynthesisOrder]
         [SynthesisSettingName("Override Item Type Settings")]

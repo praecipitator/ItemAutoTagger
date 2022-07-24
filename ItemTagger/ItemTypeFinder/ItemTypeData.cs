@@ -116,6 +116,10 @@ namespace ItemTagger.ItemTypeFinder
                 "SimSettlementsV2:MiscObjects:Unlockable"
             );
 
+            blacklistEdid.AddExactMatch(
+                "HM_UnassignedLabel"
+            );
+
             blacklistEdid.AddPrefixMatch(
                 "DN015_NoneNameMisc",
                 "DummyNoEdit_",
@@ -146,7 +150,11 @@ namespace ItemTagger.ItemTypeFinder
                 "SS2_HQWorkerSelectForm_",
                 "kgSIM_TextReplace_",
                 "SS2RotC_PluginName_",
-                "SS2RotC_CPDesigner_"
+                "SS2RotC_CPDesigner_",
+                "SS2_Tag_VRWorldspaceConfig_",
+                "SS2_DisasterInfestationDefinition_",
+                "SS2_DisasterAttackDefinition__",
+                "SS2_VRWorldspaceConfig_"
              );
 
             whitelistModelTool.AddExactMatch(

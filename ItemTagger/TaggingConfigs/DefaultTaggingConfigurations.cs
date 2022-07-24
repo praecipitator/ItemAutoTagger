@@ -110,7 +110,7 @@ namespace ItemTagger.TaggingConfigs
             };
 
             configSettingLWIS.AddExtraTags("Mutant", "Dog", "Game", "Core", "Book", "Ore", "Trash", "Shroom", "Herb", "Ingredient", "Bobblehead", "Ring", "Unique", "Kremvh", "Deliverer", "Armor", "Gun", "Clothing", "Melee", "PArmor", "ArmorChest", "ArmorArm", "ArmorLeg", "ArmorHead", "ArmorMask", "Hat", "Mask", "Eyes", "Flare", "Pistol", "ARifle", "CRifle", "RRifle", "Rifle", "Revolver", "Syringer", "Shotgun", "Rocket", "Railway", "PRifle", "PPistol", "IRifle", "IPistol", "PipeR", "Pipe", "Lever", "FatMan", "Musket", "LRifle", "LPistol", "JunkJet", "Gauss", "Gatling", "Flamer", "Cryolator", "Cannon", "Minigun", "Gamma", "Alien", "SMG", "Revolver", "Harpoon", "Shishkebab", "Ripper", "MeleeH2H", "Melee1H", "Melee2H", "Bat", "Sword", "Knife", "Sledge", "PArmorLegR", "PArmorLegL", "PArmorArmR", "PArmorArmL", "PArmorChest", "PArmorHead");
-            configSettingLWIS.AddExtraTags("Perk: Mag");
+            configSettingLWIS.AddDeprecatedTags("Perk: Mag");
 
             defaultConfigs.Add(TaggingConfigType.LWIS, configSettingLWIS);
 

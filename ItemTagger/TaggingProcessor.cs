@@ -22,8 +22,9 @@ namespace ItemTagger
         private readonly ItemTyper itemTyper;
 
         private static readonly Regex TAG_EXTRACT_REGEX = new(@"^[\[\]()|{}]([^\[\]()|{}]+)[\[\]()|{}].+$", RegexOptions.Compiled);
-        // remove leading ' - ' and following '{{{foo}}}'
-        private static readonly Regex TAG_CLEAN_NAME = new(@"^\s*-\s+|\s+{{{[^{}]*}}}\s*$", RegexOptions.Compiled);
+
+        private static readonly Regex TAG_STRIP_COMPONENTS = new(@"{{{[^{}]*}}}\s*$", RegexOptions.Compiled);
+
 
         public TaggingProcessor(
             TaggingConfiguration taggingConf,
@@ -53,15 +54,9 @@ namespace ItemTagger
 
         private string GetTaggedName(string newTag, string inputName, string suffix = "")
         {
-            if(taggingConfig.HasDeprecatedTags())
+            if(newTag == "")
             {
-                var existingTag = ExtractTag(inputName);
-                if(taggingConfig.IsTagDeprecated(existingTag))
-                {
-                    // strip existing tag
-                    // should be the length of existingTag+3
-                    inputName = inputName[(existingTag.Length + 3)..];
-                }
+                return inputName + suffix;
             }
 
             return newTag + " " + inputName + suffix;
@@ -73,7 +68,7 @@ namespace ItemTagger
             {
                 var prevName = armor.Name?.String;
 
-                if (prevName.IsNullOrEmpty() || !ShouldTag(prevName))
+                if (prevName.IsNullOrEmpty() || HasValidTag(prevName))
                 {
                     continue;
                 }
@@ -115,7 +110,7 @@ namespace ItemTagger
                 return;
             }
 
-            var nameBase = TAG_CLEAN_NAME.Replace(prevName, "").Trim();
+            var nameBase = CleanName(prevName);
 
             var newItem = state.PatchMod.Armors.GetOrAddAsOverride(item);
             newItem.Name = GetTaggedName(prefix, nameBase);
@@ -171,7 +166,7 @@ namespace ItemTagger
             {
                 var prevName = weap.Name?.String;
 
-                if (prevName.IsNullOrEmpty() || !ShouldTag(prevName))
+                if (prevName.IsNullOrEmpty() || HasValidTag(prevName))
                 {
                     continue;
                 }
@@ -213,7 +208,7 @@ namespace ItemTagger
             }
 
             var newItem = state.PatchMod.Weapons.GetOrAddAsOverride(item);
-            var nameBase = TAG_CLEAN_NAME.Replace(prevName, "").Trim();
+            var nameBase = CleanName(prevName);
             
             newItem.Name = GetTaggedName(prefix, nameBase);
         }
@@ -263,7 +258,7 @@ namespace ItemTagger
                 {
                     var prevName = alch.Name?.String;
 
-                    if (prevName.IsNullOrEmpty() || !ShouldTag(prevName))
+                    if (prevName.IsNullOrEmpty() || HasValidTag(prevName))
                     {
                         continue;
                     }
@@ -288,7 +283,7 @@ namespace ItemTagger
                 {
                     var prevName = tape.Name?.String;
 
-                    if (prevName.IsNullOrEmpty() || !ShouldTag(prevName))
+                    if (prevName.IsNullOrEmpty() || HasValidTag(prevName))
                     {
                         continue;
                     }
@@ -312,7 +307,7 @@ namespace ItemTagger
                 {
                     var prevName = book.Name?.String;
 
-                    if (prevName.IsNullOrEmpty() || !ShouldTag(prevName))
+                    if (prevName.IsNullOrEmpty() || HasValidTag(prevName))
                     {
                         continue;
                     }
@@ -336,7 +331,7 @@ namespace ItemTagger
                 try 
                 {
                     var prevName = ammo.Name?.String;
-                    if (prevName.IsNullOrEmpty() || !ShouldTag(prevName))
+                    if (prevName.IsNullOrEmpty() || HasValidTag(prevName))
                     {
                         continue;
                     }
@@ -361,7 +356,7 @@ namespace ItemTagger
                 {
                     var prevName = key.Name?.String;
 
-                    if (prevName.IsNullOrEmpty() || !ShouldTag(prevName))
+                    if (prevName.IsNullOrEmpty() || HasValidTag(prevName))
                     {
                         continue;
                     }
@@ -402,13 +397,34 @@ namespace ItemTagger
         {
             // before even trying to process this, check if we even should
             var prevName = misc.Name?.String;
-            
-            if (prevName.IsNullOrEmpty() || !ShouldTag(prevName))
+
+            // for MISCs, even those with a valid tag might have to be processed
+            if (prevName.IsNullOrEmpty())
             {
                 return;
             }
 
-            var curType = itemTyper.GetMiscType(misc);
+            ItemType curType;
+            if (HasValidTag(prevName))
+            {
+                // special case: check if we have components
+                if (misc.Components != null && misc.Components.Count > 0)
+                {
+                    curType = itemTyper.GetMiscType(misc);
+                    if (curType != ItemType.None)
+                    {
+                        var nameBase = CleanName(prevName);
+
+                        var newItem = state.PatchMod.MiscItems.GetOrAddAsOverride(misc);
+                        var suffix = GetComponentString(misc.Components);
+
+                        newItem.Name = GetTaggedName("", nameBase, suffix);
+                    }
+                }
+                return;
+            }
+
+            curType = itemTyper.GetMiscType(misc);
             if (curType != ItemType.None)
             {
                 // do not add component tags for Resource or Shipment, because it should be obvious anyway
@@ -421,6 +437,33 @@ namespace ItemTagger
                     TagItem(prevName, misc, curType, state.PatchMod.MiscItems);
                 }                
             }
+        }
+
+        private string CleanName(string name)
+        {
+            name = TAG_STRIP_COMPONENTS.Replace(name, "").Trim();
+
+            if (taggingConfig.HasDeprecatedTags())
+            {
+                var existingTag = ExtractTag(name);
+                if (taggingConfig.IsTagDeprecated(existingTag))
+                {
+                    // strip existing tag
+                    // should be the length of existingTag+3
+                    name = name[(existingTag.Length + 3)..];
+                }
+            }
+
+            var firstPart = name.Substring(0, 1);
+            var lastPart = name[^1..];
+
+            if(firstPart == "-" && lastPart != "-")
+            {
+                // strip the leading - off
+                name = name[1..].Trim();
+            }
+
+            return name;
         }
 
 
@@ -438,7 +481,7 @@ namespace ItemTagger
                 return;
             }
 
-            var nameBase = TAG_CLEAN_NAME.Replace(prevName, "").Trim();
+            var nameBase = CleanName(prevName);
 
             var newItem = group.GetOrAddAsOverride(item);
             var suffix = "";
@@ -482,22 +525,29 @@ namespace ItemTagger
             return matches.Groups[1].Value;
         }
 
-        private bool ShouldTag(string name)
+        private bool HasValidTag(string name, out string existingTag)
         {
             var trimmedName = name.Trim();
-            if(trimmedName.IsNullOrEmpty())
+            existingTag = "";
+            if (trimmedName.IsNullOrEmpty())
+            {
+                // this shouldn't actually happen
+                return false;
+            }
+
+            existingTag = ExtractTag(trimmedName);
+
+            if (existingTag == "")
             {
                 return false;
             }
 
-            var existingTag = ExtractTag(trimmedName);
+            return taggingConfig.IsTagValid(existingTag);
+        }
 
-            if (existingTag == "")
-            {
-                return true;
-            }
-
-            return !taggingConfig.IsTagValid(existingTag);
+        private bool HasValidTag(string name)
+        {
+            return HasValidTag(name, out _);
         }
     }
 }
