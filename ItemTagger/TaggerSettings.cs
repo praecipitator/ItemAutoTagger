@@ -20,6 +20,11 @@ namespace ItemTagger
         public bool UseComponentString = true;
 
         [SynthesisOrder]
+        [SynthesisSettingName("Remove brackets around names")]
+        [SynthesisTooltip("With some UI configurations, names enclosed in brackets become invisible. This option removes brackets around names.")]
+        public bool RemoveBrackets = true;
+
+        [SynthesisOrder]
         [SynthesisSettingName("Override Item Type Settings")]
         [SynthesisTooltip("Here, you can manually configure the types of items. The actual tag depends on the selected Tagging Configuration")]
         public ItemTypeOverrides ItemTypeConfig = new();

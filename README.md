@@ -20,6 +20,10 @@ The most important setting, this defines which set of tags to use. If you select
 ### Append Components
 If checked, will append strings like `{{{wood,steel,copper}}}` after the item's name. Some UI mods can interpret these, and display a nice list of included components, while others don't.
 
+### Remove brackets around names
+With some UI configurations, names enclosed in brackets become invisible. This option removes brackets around names.
+For example, `[My Settings Holotape]` becomes `[Settings] My Settings Holotape`
+
 ### Override Item Type Settings
 If the heuristics gets the types of certain items wrong (like, fails to classify something as a Quest Item, and thinks it's Scrap), you can manually override them here. You can also exclude them from tagging entirely by picking "None" as the type.
 

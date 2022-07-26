@@ -25,7 +25,7 @@ namespace ItemTagger
 
         private static readonly Regex TAG_STRIP_COMPONENTS = new(@"{{{[^{}]*}}}\s*$", RegexOptions.Compiled);
 
-
+        private static readonly Regex REMOVE_BRACKETS = new(@"^[\[{(](.+)[\]})]$", RegexOptions.Compiled);
         public TaggingProcessor(
             TaggingConfiguration taggingConf,
             TaggerSettings settings,
@@ -52,7 +52,7 @@ namespace ItemTagger
             ProcessArmors();
         }
 
-        private string GetTaggedName(string newTag, string inputName, string suffix = "")
+        private static string GetTaggedName(string newTag, string inputName, string suffix = "")
         {
             if(newTag == "")
             {
@@ -283,6 +283,11 @@ namespace ItemTagger
                 {
                     var prevName = tape.Name?.String;
 
+                    if(tape.EditorID == "th1nkEyeBotUninstallHolotapeNew")
+                    {
+                        Console.WriteLine("foo");
+                    }
+
                     if (prevName.IsNullOrEmpty() || HasValidTag(prevName))
                     {
                         continue;
@@ -454,10 +459,20 @@ namespace ItemTagger
                 }
             }
 
-            var firstPart = name.Substring(0, 1);
+            var firstPart = name[..1];
             var lastPart = name[^1..];
+            //th1nkEyeBotUninstallHolotapeNew
+            //[AEC Uninstallation/Utility Holotape]
+            if (settings.RemoveBrackets)
+            {
+                var matches = REMOVE_BRACKETS.Match(name);
+                if (matches.Groups.Count >= 2)
+                {
+                    name = matches.Groups[1].Value.Trim();
+                }
+            }
 
-            if(firstPart == "-" && lastPart != "-")
+            if (firstPart == "-" && lastPart != "-")
             {
                 // strip the leading - off
                 name = name[1..].Trim();
