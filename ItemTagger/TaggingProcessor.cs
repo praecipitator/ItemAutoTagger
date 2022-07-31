@@ -444,25 +444,32 @@ namespace ItemTagger
             }
         }
 
-        private string CleanName(string name)
+        private string CleanName(string name, bool stripAllTags = false)
         {
             name = TAG_STRIP_COMPONENTS.Replace(name, "").Trim();
 
-            if (taggingConfig.HasDeprecatedTags())
+            if(stripAllTags)
             {
                 var existingTag = ExtractTag(name);
-                if (taggingConfig.IsTagDeprecated(existingTag))
+                name = name[(existingTag.Length + 3)..];
+            }
+            else
+            {
+                if (taggingConfig.HasDeprecatedTags())
                 {
-                    // strip existing tag
-                    // should be the length of existingTag+3
-                    name = name[(existingTag.Length + 3)..];
+                    var existingTag = ExtractTag(name);
+                    if (taggingConfig.IsTagDeprecated(existingTag))
+                    {
+                        // strip existing tag
+                        // should be the length of existingTag+3
+                        name = name[(existingTag.Length + 3)..];
+                    }
                 }
             }
 
             var firstPart = name[..1];
             var lastPart = name[^1..];
-            //th1nkEyeBotUninstallHolotapeNew
-            //[AEC Uninstallation/Utility Holotape]
+
             if (settings.RemoveBrackets)
             {
                 var matches = REMOVE_BRACKETS.Match(name);
@@ -517,7 +524,8 @@ namespace ItemTagger
         {
             var cmpNames = components
                 .Select(cmpo => cmpo.Component.TryResolve(state.LinkCache)?.Name?.String)
-                .Where(kw => kw != null) ?? new List<string>();
+                .NotNull()
+                .Select(kwName => CleanName(kwName, true)) ?? new List<string>();
 
             var joinedStr = string.Join(",", cmpNames);
             if (joinedStr == "")
