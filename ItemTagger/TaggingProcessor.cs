@@ -283,11 +283,6 @@ namespace ItemTagger
                 {
                     var prevName = tape.Name?.String;
 
-                    if(tape.EditorID == "th1nkEyeBotUninstallHolotapeNew")
-                    {
-                        Console.WriteLine("foo");
-                    }
-
                     if (prevName.IsNullOrEmpty() || HasValidTag(prevName))
                     {
                         continue;
