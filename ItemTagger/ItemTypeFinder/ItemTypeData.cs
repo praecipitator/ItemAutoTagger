@@ -40,6 +40,8 @@ namespace ItemTagger.ItemTypeFinder
 
         public readonly MatchingListSet edidMatchLists = new();
 
+        public readonly MatchingListSet scriptMatchLists = new();
+
         // keywords
         public readonly MatchingFormList<IKeywordGetter> keywordsWeaponMelee = new();
         public readonly MatchingFormList<IKeywordGetter> keywordsGlobalBlacklist = new();
@@ -401,6 +403,10 @@ namespace ItemTagger.ItemTypeFinder
                 .AddPrefixMatch(
                     "pa_comp_T60_" // these things are configured in a really weird way, so, hardcoding them like this
                 );
+
+            scriptMatchLists
+                .GetListForType(ItemType.Holotape)
+                .AddExactMatch("praVRF:SimulationData");
 
             // hard overrides
             hardcodedOverrides.Add(Fallout4.Ingestible.GroundMolerat.FormKey, ItemType.Food);

@@ -74,6 +74,25 @@ namespace ItemTagger.Helper
             return item.VirtualMachineAdapter.Scripts.Any(script => list.Matches(script.Name));
         }
 
+        public static ItemType? GetMatchingTypeByScript(this IHaveVirtualMachineAdapterGetter item, MatchingListSet listSet)
+        {
+            var scripts = item.VirtualMachineAdapter?.Scripts;
+            if(null == scripts)
+            {
+                return null;
+            }
+            foreach (var script in scripts)
+            {
+                var maybeResult = listSet.GetMatchingType(script.Name);
+                if (maybeResult != null)
+                {
+                    return maybeResult;
+                }
+            }
+
+            return null;
+        }
+
         public static bool HasEffect(this IIngestibleGetter item, FormLinkGetter<IMagicEffectGetter> effect)
         {
             return item.Effects.Any(entry => entry.BaseEffect.Equals(effect));

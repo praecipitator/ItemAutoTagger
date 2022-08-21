@@ -659,6 +659,12 @@ namespace ItemTagger.ItemTypeFinder
                 return (ItemType)edidType;
             }
 
+            var scriptType = miscItem.GetMatchingTypeByScript(itemTypeData.scriptMatchLists);
+            if (scriptType != null)
+            {
+                return (ItemType)scriptType;
+            }
+
             if (miscItem.HasAnyScript(itemTypeData.scriptListPipBoy)) {
                 return ItemType.PipBoy;
             }

@@ -382,10 +382,10 @@ namespace ItemTagger
                 {
                     ProcessMisc(misc);
                 } 
-                catch(ArgumentOutOfRangeException e)
+                /*catch(ArgumentOutOfRangeException e)
                 {
                     Console.WriteLine("Exception while processing "+misc.FormKey.ToString()+": "+e.Message+". This might be a bug in Synthesis...");
-                }
+                }*/
                 catch(Exception e)
                 {
                     throw RecordException.Enrich(e, misc);
@@ -446,7 +446,10 @@ namespace ItemTagger
             if(stripAllTags)
             {
                 var existingTag = ExtractTag(name);
-                name = name[(existingTag.Length + 3)..];
+                if(existingTag != "")
+                {
+                    name = name[(existingTag.Length + 3)..];
+                }
             }
             else
             {
@@ -520,7 +523,12 @@ namespace ItemTagger
             var cmpNames = components
                 .Select(cmpo => cmpo.Component.TryResolve(state.LinkCache)?.Name?.String)
                 .NotNull()
-                .Select(kwName => CleanName(kwName, true)) ?? new List<string>();
+                .Select(kwName => kwName == null ? "" : CleanName(kwName, true)) ?? new List<string>();
+
+            if(cmpNames.Count() == 0)
+            {
+                return "";
+            }
 
             var joinedStr = string.Join(",", cmpNames);
             if (joinedStr == "")
