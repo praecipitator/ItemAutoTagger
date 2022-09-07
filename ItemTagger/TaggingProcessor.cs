@@ -111,6 +111,10 @@ namespace ItemTagger
             }
 
             var nameBase = CleanName(prevName);
+            if(nameBase.Length == 0)
+            {
+                return;
+            }
 
             var newItem = state.PatchMod.Armors.GetOrAddAsOverride(item);
             newItem.Name = GetTaggedName(prefix, nameBase);
@@ -207,8 +211,12 @@ namespace ItemTagger
                 return;
             }
 
-            var newItem = state.PatchMod.Weapons.GetOrAddAsOverride(item);
             var nameBase = CleanName(prevName);
+            if (nameBase.Length == 0)
+            {
+                return;
+            }
+            var newItem = state.PatchMod.Weapons.GetOrAddAsOverride(item);
             
             newItem.Name = GetTaggedName(prefix, nameBase);
         }
@@ -414,6 +422,10 @@ namespace ItemTagger
                     if (curType != ItemType.None)
                     {
                         var nameBase = CleanName(prevName);
+                        if (nameBase.Length == 0)
+                        {
+                            return;
+                        }
 
                         var newItem = state.PatchMod.MiscItems.GetOrAddAsOverride(misc);
                         var suffix = GetComponentString(misc.Components);
@@ -442,6 +454,10 @@ namespace ItemTagger
         private string CleanName(string name, bool stripAllTags = false)
         {
             name = TAG_STRIP_COMPONENTS.Replace(name, "").Trim();
+            if(name.Length == 0)
+            {
+                return "";
+            }
 
             if(stripAllTags)
             {
@@ -456,7 +472,7 @@ namespace ItemTagger
                 if (taggingConfig.HasDeprecatedTags())
                 {
                     var existingTag = ExtractTag(name);
-                    if (taggingConfig.IsTagDeprecated(existingTag))
+                    if (existingTag.Length > 0 && taggingConfig.IsTagDeprecated(existingTag))
                     {
                         // strip existing tag
                         // should be the length of existingTag+3
@@ -502,6 +518,10 @@ namespace ItemTagger
             }
 
             var nameBase = CleanName(prevName);
+            if (nameBase.Length == 0)
+            {
+                return;
+            }
 
             var newItem = group.GetOrAddAsOverride(item);
             var suffix = "";
@@ -523,9 +543,10 @@ namespace ItemTagger
             var cmpNames = components
                 .Select(cmpo => cmpo.Component.TryResolve(state.LinkCache)?.Name?.String)
                 .NotNull()
-                .Select(kwName => kwName == null ? "" : CleanName(kwName, true)) ?? new List<string>();
+                .Select(kwName => kwName == null ? "" : CleanName(kwName, true))
+                .Where(kwName => kwName != "") ?? new List<string>();
 
-            if(cmpNames.Count() == 0)
+            if(!cmpNames.Any())
             {
                 return "";
             }
