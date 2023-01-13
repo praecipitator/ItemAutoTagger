@@ -59,6 +59,8 @@ namespace ItemTagger.ItemTypeFinder
         public readonly MatchingFormList<ISoundDescriptorGetter> soundListDevice = new();
         public readonly MatchingFormList<ISoundDescriptorGetter> soundListTool = new();
 
+        public readonly MatchingFormList<IInstanceNamingRulesGetter> innrListSkip = new();
+
         // regexes? regices? regex objects for matching special stuff
         private static readonly Regex MATCH_MODEL_MODEL  = new(@"card[^\\]*\.nif$",  RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant);
         private static readonly Regex MATCH_MODEL_NOTE   = new(@"note[^\\]\.nif$",   RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant);
@@ -332,6 +334,31 @@ namespace ItemTagger.ItemTypeFinder
             soundListDevice.Add(Fallout4.SoundDescriptor.OBJStealthBoyActivate);
             soundListTool.Add(Fallout4.SoundDescriptor.NPCHumanWhistleDog);
 
+            // INNRs
+            innrListSkip.Add(Fallout4.InstanceNamingRules.dn_BACKUP.FormKey);
+            innrListSkip.Add(Fallout4.InstanceNamingRules.dn_Clothes.FormKey);
+            innrListSkip.Add(Fallout4.InstanceNamingRules.dn_CommonArmor.FormKey);
+            innrListSkip.Add(Fallout4.InstanceNamingRules.dn_CommonGun.FormKey);
+            innrListSkip.Add(Fallout4.InstanceNamingRules.dn_CommonMelee.FormKey);
+            innrListSkip.Add(Fallout4.InstanceNamingRules.dn_PowerArmor.FormKey);
+            innrListSkip.Add(Fallout4.InstanceNamingRules.dn_VaultSuit.FormKey);
+
+            innrListSkip.Add(NukaWorld.InstanceNamingRules.dn_DLC04_PowerArmor_NukaCola.FormKey);
+            innrListSkip.Add(NukaWorld.InstanceNamingRules.dn_DLC04_PowerArmor_Overboss.FormKey);
+            innrListSkip.Add(NukaWorld.InstanceNamingRules.dn_DLC04_PowerArmor_Quantum.FormKey);
+            innrListSkip.Add(NukaWorld.InstanceNamingRules.DLC04_dn_CommonArmorUpdate.FormKey);
+            innrListSkip.Add(NukaWorld.InstanceNamingRules.DLC04_dn_CommonGunUpdate.FormKey);
+            innrListSkip.Add(NukaWorld.InstanceNamingRules.DLC04_dn_CommonMeleeUpdate.FormKey);
+
+            innrListSkip.Add(Coast.InstanceNamingRules.DLC03_dn_CommonArmor.FormKey);
+            innrListSkip.Add(Coast.InstanceNamingRules.DLC03_dn_CommonGun.FormKey);
+            innrListSkip.Add(Coast.InstanceNamingRules.DLC03_dn_CommonMelee.FormKey);
+            innrListSkip.Add(Coast.InstanceNamingRules.DLC03_dn_Legendary_Armor.FormKey);
+            innrListSkip.Add(Coast.InstanceNamingRules.DLC03_dn_Legendary_Weapons.FormKey);
+
+            innrListSkip.Add(Robot.InstanceNamingRules.DLC01dn_LightningGun.FormKey);
+            innrListSkip.Add(Robot.InstanceNamingRules.DLC01dn_PowerArmor.FormKey);
+
             // TODO: 
             // SimSettlementsV2:ObjectReferences:DeployableCityPlannersDesk -> city planner's desk -> tool? device?
 
@@ -454,7 +481,6 @@ namespace ItemTagger.ItemTypeFinder
 
             // blacklist
             hardcodedOverrides.Add(Workshop01.Ingestible.DLC02WorkshopDetectLifeTest.FormKey, ItemType.None);
-
         }
     }
 }

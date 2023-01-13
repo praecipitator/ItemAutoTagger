@@ -4,11 +4,6 @@ using Mutagen.Bethesda.Plugins;
 using Mutagen.Bethesda.Plugins.Aspects;
 using Mutagen.Bethesda.Plugins.Records;
 using Noggog;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ItemTagger.Helper
 {
@@ -141,6 +136,27 @@ namespace ItemTagger.Helper
             }
 
             return item.FormKey.ToString() + " " + item.EditorID;
+        }
+
+        /// <summary>
+        /// Shift elements forward by 1, putting the last element into the first place
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="list"></param>
+        public static void ShiftByOne<T>(this ExtendedList<T> list)
+        {
+            var cnt = list.Count;
+            if(cnt == 0)
+            {
+                return;
+            }
+            var prevElem = list[0];
+            for(var i=1;i<cnt;i++)
+            {
+                (prevElem, list[i]) = (list[i], prevElem);
+            }
+
+            list[0] = prevElem;
         }
     }
 }

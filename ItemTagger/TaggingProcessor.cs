@@ -9,6 +9,7 @@ using Noggog;
 using Mutagen.Bethesda.Plugins.Exceptions;
 using Mutagen.Bethesda.FormKeys.Fallout4;
 using ItemTagger.Helper;
+using Mutagen.Bethesda.Plugins;
 
 namespace ItemTagger
 {
@@ -26,6 +27,11 @@ namespace ItemTagger
         private static readonly Regex TAG_STRIP_COMPONENTS = new(@"{{{[^{}]*}}}\s*$", RegexOptions.Compiled);
 
         private static readonly Regex REMOVE_BRACKETS = new(@"^[\[{(](.+)[\]})]$", RegexOptions.Compiled);
+
+        private readonly Dictionary<IInstanceNamingRulesGetter, HashSet<ItemType>> innrTypeMapping;
+
+        private readonly HashSet<FormKey> irrelevantInnrs;
+
         public TaggingProcessor(
             TaggingConfiguration taggingConf,
             TaggerSettings settings,
@@ -37,6 +43,9 @@ namespace ItemTagger
             this.settings = settings;
 
             itemTyper = new ItemTyper(state, settings.ItemTypeConfig);
+
+            innrTypeMapping = new();
+            irrelevantInnrs = new();
         }
 
         public void Process()
@@ -50,6 +59,8 @@ namespace ItemTagger
             // now, equipment
             ProcessWeapons();
             ProcessArmors();
+            // finally, INNRs
+            ProcessInnrs();
         }
 
         private static string GetTaggedName(string newTag, string inputName, string suffix = "")
@@ -120,12 +131,305 @@ namespace ItemTagger
             newItem.Name = GetTaggedName(prefix, nameBase);
         }
 
+        private void ProcessInnrs()
+        {
+            if(!settings.PatchINNRs)
+            {
+                return;
+            }
+
+            foreach(var kv in innrTypeMapping)
+            {
+                if(kv.Key == null || kv.Value == null)
+                {
+                    // this shouldn't happen
+                    continue;
+                }
+                var innr = kv.Key;                
+                var types = kv.Value;
+                var numTypes = types.Count;
+                if(numTypes == 0)
+                {
+                    continue;
+                }
+
+                if (numTypes > 1)
+                {
+                    // for now, just use a generic one
+                    switch(innr.Target)
+                    {
+                        case InstanceNamingRules.RuleTarget.Armor:
+                            TagInnr(innr, ItemType.Armor);
+                            break;
+                        case InstanceNamingRules.RuleTarget.Weapon:
+                            TagInnr(innr, ItemType.WeaponRanged);
+                            break;
+                    }
+                }
+                else
+                {
+                    var theType = types.First();
+                    TagInnr(innr, theType);
+                }
+            }
+        }
+
+        private bool IsInnrTagged(IInstanceNamingRulesGetter innr)
+        {
+
+            foreach(var set in innr.RuleSets)
+            {
+                // disregard empty sets until we find a non-empty one
+                if(set == null || set.Names == null)
+                {
+                    continue;
+                }
+
+                foreach(var n in set.Names)
+                {
+                    if(n.Name != null && !n.Name.String.IsNullOrEmpty())
+                    {
+                        var theString = n.Name.String;
+                        // we found a non-empty name, make the stuff depend on this
+                        // either this IS a valid tag, or it HAS a valid tag
+                        return (IsValidTag(theString) || HasValidTag(theString));
+                    }
+                }
+
+            }
+            return false;
+        }
+
+        private void TagInnr(IInstanceNamingRulesGetter innr, ItemType type)
+        {
+            var prefix = taggingConfig[type];
+            if (prefix == "")
+            {
+                return;
+            }
+            // it's probably not safe to add more than the default 10 rules, so we have 3 options
+            //  - there is still at least one empty Rulesets at the back
+            //      -> move all forward by one, put the new one at the front
+            //  - there are no empty rulesets at the back, but there is an empty one at the front
+            //      -> modify the first-most one to add the tag
+            //  - there are no empty rulesets nowhere
+            //      -> take the first ruleset, whatever it is. Prefix all the names with the tag.
+            //      -> If there isn't one without conditions, append a new one, containing just the tag.
+            
+
+            var firstNotEmpty = -1;
+            var lastNotEmpty = -1;
+            var i = 0;
+            foreach(var set in innr.RuleSets)
+            {
+                var isEmpty = false;
+                if(set.Names == null)
+                {
+                    isEmpty = true;
+                }
+                else
+                {
+                    isEmpty = true;
+                    foreach(var n in set.Names)
+                    {
+                        if(n.Name != null && !n.Name.String.IsNullOrEmpty())
+                        {
+                            isEmpty = false;
+                            break;
+                        }
+                    }
+                }
+
+                if(!isEmpty)
+                {  
+                    if(i > lastNotEmpty)
+                    {
+                        lastNotEmpty = i;
+                    }
+                    if(firstNotEmpty < 0)
+                    {
+                        firstNotEmpty = i;
+                    }
+                }
+                i++;
+            }
+
+
+            var newOverride = state.PatchMod.InstanceNamingRules.GetOrAddAsOverride(innr);
+            
+            // we have space to move forward
+            if (lastNotEmpty < 9)
+            {
+                //var newOverride = state.PatchMod.InstanceNamingRules.GetOrAddAsOverride(innr);
+                // we can move stuff by one
+                newOverride.RuleSets.ShiftByOne();
+                newOverride.RuleSets[0] = GetNewNamingRuleSet(prefix);
+                return;
+            }
+
+            // there is an empty one at the front, reuse it
+            if(firstNotEmpty > 0)
+            {
+                //var newOverride = state.PatchMod.InstanceNamingRules.GetOrAddAsOverride(innr);
+                int lastEmpty = firstNotEmpty - 1;
+
+                newOverride.RuleSets[lastEmpty] = GetNewNamingRuleSet(prefix);
+                return;
+            }
+
+            // finally, take entry 0, prefix all of the strings there
+            bool haveUnconditional =  false;
+            InstanceNamingRuleSet firstRs = newOverride.RuleSets[0];
+            firstRs.Names ??= new();// this shouldn't actually be null, the loop above should have caught that
+            foreach (var n in firstRs.Names)
+            {
+                if((n.Keywords == null || n.Keywords.Count == 0) && (n.Properties == null))
+                {
+                    haveUnconditional = true;
+                }
+                string? properStringName = n.Name?.String;
+
+                if(properStringName.IsNullOrEmpty())
+                {
+                    n.Name = prefix;
+                }
+                else
+                {
+                    var nameBase = CleanName(properStringName);
+                    
+                    if (nameBase.IsNullOrEmpty())
+                    {
+                        n.Name = prefix;
+                    }
+                    else
+                    {
+                        n.Name = GetTaggedName(prefix, nameBase);
+                    }            
+                }
+            }
+            if(!haveUnconditional)
+            {
+                // append a new one
+                var namingRule = new InstanceNamingRule
+                {
+                    Index = 10000,
+                    Name = prefix
+                };
+
+                firstRs.Names.Add(namingRule);
+            }
+
+            // Console.WriteLine("Could not autopatch INNR " + innr.ToString() + ": found no empty ruleset.");
+        }
+
+        private static InstanceNamingRuleSet GetNewNamingRuleSet(string name, ushort index = 10000)
+        {
+            var newEntry = new InstanceNamingRuleSet();
+
+            newEntry.Names ??= new();
+
+            var namingRule = new InstanceNamingRule
+            {
+                Index = index,
+                Name = name
+            };
+
+            newEntry.Names.Add(namingRule);
+
+            return newEntry;
+        }
+
+        private void CheckInnrForPatching(IFormLinkNullableGetter<IInstanceNamingRulesGetter> innrGetter, ItemType type)
+        {
+            if (!settings.PatchINNRs)
+            {
+                return;
+            }
+            if (irrelevantInnrs.Contains(innrGetter.FormKey))
+            {
+                return;
+            }
+
+            IInstanceNamingRulesGetter? innr = null;
+            if (!ShouldPatchINNR(innrGetter, type, out innr) || innr == null)
+            {
+                irrelevantInnrs.Add(innrGetter.FormKey);
+                return;
+            }
+
+            if (innrTypeMapping.ContainsKey(innr))
+            {
+                innrTypeMapping[innr].Add(type);
+                return;
+            }
+
+            var newSet = new HashSet<ItemType>() { type };
+            innrTypeMapping[innr] = newSet;
+        }
+
+        private bool IsInnrTypeCorrect(IInstanceNamingRulesGetter innr, ItemType type)
+        {
+            switch (innr.Target)
+            {
+                case InstanceNamingRules.RuleTarget.Armor:
+                    if (!ItemTyper.IsTypeArmor(type))
+                    {
+                        return false;
+                    }
+                    break;
+                case InstanceNamingRules.RuleTarget.Weapon:
+                    if (!ItemTyper.IsTypeWeapon(type))
+                    {
+                        return false;
+                    }
+                    break;
+                default:
+                    return false;
+            }
+            return true;
+        }
+
+        private bool ShouldPatchINNR(IFormLinkNullableGetter<IInstanceNamingRulesGetter> innrGetter, ItemType type, out IInstanceNamingRulesGetter? innr)
+        {
+            innr = null;
+            if (!settings.PatchINNRs || innrGetter.IsNull)
+            {
+                return false;
+            }
+
+            innr = innrGetter.TryResolve(state.LinkCache);
+            if (innr == null)
+            {
+                Console.WriteLine("Failed to resolve INNR " + innrGetter.ToString());
+                return false;
+            }
+
+            if (itemTyper.IsBlacklisted(innr))
+            {
+                return false;
+            }
+
+            if (!IsInnrTypeCorrect(innr, type))
+            {
+                Console.WriteLine("Will not process INNR " + innrGetter.ToString() + " for type " + type.ToString() + ", because it has an incorrect type");
+                return false;
+            }
+
+            if (IsInnrTagged(innr))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
         private void ProcessArmorWithINNRs(IArmorGetter armor, ItemType armorType)
         {
-            // TODO: check this armor's INNR, if it has any.
             // do we even need to process this?
             if (!armor.InstanceNaming.IsNull && armor.ObjectTemplates?.Count > 0)
             {
+                // potentially process the INNR here
+                CheckInnrForPatching(armor.InstanceNaming, armorType);
                 return;
             }
 
@@ -149,6 +453,11 @@ namespace ItemTagger
                         newOverride.InstanceNaming.SetTo(Fallout4.InstanceNamingRules.dn_CommonArmor);
                         break;
                 }
+            }
+            else
+            {
+                // otherwise do something with INNRs
+                CheckInnrForPatching(armor.InstanceNaming, armorType);
             }
 
 
@@ -203,7 +512,7 @@ namespace ItemTagger
                 return;
             }
 
-            // now, special case: if this thing has INNRs, don't actually prefix it. Assume it's INNRs are correct.
+            // this shouldn't actually happen...
             if(!item.InstanceNaming.IsNull)
             {
                 //item.FormKey.ToString
@@ -223,10 +532,10 @@ namespace ItemTagger
 
         private void ProcessWeaponWithINNRs(IWeaponGetter weapon, ItemType type)
         {
-            // TODO: check this weapon's INNR, if it has any.
             // do we even need to process this?
             if(!weapon.InstanceNaming.IsNull && weapon.ObjectTemplates?.Count > 0)
             {
+                CheckInnrForPatching(weapon.InstanceNaming, type);
                 return;
             }
 
@@ -244,6 +553,10 @@ namespace ItemTagger
                     newOverride.InstanceNaming.SetTo(Fallout4.InstanceNamingRules.dn_CommonGun);
                 }
 
+            }
+            else
+            {
+                CheckInnrForPatching(weapon.InstanceNaming, type);
             }
 
             if((weapon.ObjectTemplates?.Count ?? 0) == 0)
@@ -596,5 +909,27 @@ namespace ItemTagger
         {
             return HasValidTag(name, out _);
         }
+
+        private bool IsValidTag(string name, bool onlyWithBrackets = true)
+        {
+            var matches = REMOVE_BRACKETS.Match(name);
+            if (matches.Groups.Count >= 2)
+            {
+                name = matches.Groups[1].Value.Trim();
+            }
+            else
+            {
+                if(!onlyWithBrackets)
+                {
+                    // no bracket removal matches, so this is
+                    return false;
+                }
+            }
+
+
+            return taggingConfig.IsTagValid(name);
+        }
+
+
     }
 }

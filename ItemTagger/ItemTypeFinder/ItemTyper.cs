@@ -8,6 +8,8 @@ using Mutagen.Bethesda.Plugins.Exceptions;
 using Mutagen.Bethesda.Plugins.Records;
 using Mutagen.Bethesda.Synthesis;
 using Noggog;
+using System.Diagnostics.Metrics;
+using System.Linq;
 
 namespace ItemTagger.ItemTypeFinder
 {
@@ -16,8 +18,8 @@ namespace ItemTagger.ItemTypeFinder
         None, // none/do not tag
         // MISC types. 
         Shipment,   // Shipments
-        Scrap,      // Scrap, MISCs which contain components
-        Resource,   // Resources, MISCs which a meant to represent one type of component
+        Scrap,      // Scrap, MISCs which contain components, but are neither Shipments nor Resources
+        Resource,   // Resources, MISCs which are meant to represent one type of component
         LooseMod,   // Loose modifications
         Collectible,// "Collectible" MISCs
         Quest,      // Quest items
@@ -132,7 +134,7 @@ namespace ItemTagger.ItemTypeFinder
             ItemType.KeyPassword
         };
 
-        private static readonly ItemType[] TYPES_MISC = { 
+        private static readonly ItemType[] TYPES_MISC = {
             ItemType.None,
             ItemType.Ammo,
             ItemType.Collectible,
@@ -167,6 +169,16 @@ namespace ItemTagger.ItemTypeFinder
             itemOverrides.MergeWithoutOverwrite(itemTypeData.hardcodedOverrides);
 
             LoadDictionaries();
+        }
+
+        public static bool IsTypeArmor(ItemType type)
+        {
+            return (type != ItemType.None && TYPES_ARMOR.Contains(type));
+        }
+
+        public static bool IsTypeWeapon(ItemType type)
+        {
+            return (type != ItemType.None && TYPES_WEAPON.Contains(type));
         }
 
         public ItemType GetArmorType(IArmorGetter armor)
@@ -746,6 +758,15 @@ namespace ItemTagger.ItemTypeFinder
         }
 
         // IsBlacklisted versions for different items
+
+        // this one is used by TaggingProcessor
+        public bool IsBlacklisted(IInstanceNamingRulesGetter innrGetter)
+        {
+            return 
+                itemTypeData.innrListSkip.Contains(innrGetter) ||
+                IsBlacklistedByEditorId(innrGetter.EditorID);
+        }
+
         private bool IsBlacklisted(IHolotapeGetter holotape)
         {
             return IsBlacklistedByName(holotape.Name?.String) ||

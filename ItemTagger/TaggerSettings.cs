@@ -1,5 +1,5 @@
-using ItemTagger.ItemTypeFinder;
 using ItemTagger.TaggingConfigs;
+using ItemTagger.ItemTypeFinder;
 using Mutagen.Bethesda.Fallout4;
 using Mutagen.Bethesda.Plugins;
 using Mutagen.Bethesda.Plugins.Records;
@@ -23,6 +23,11 @@ namespace ItemTagger
         [SynthesisSettingName("Remove brackets around names")]
         [SynthesisTooltip("With some UI configurations, names enclosed in brackets become invisible. This option removes brackets around names.")]
         public bool RemoveBrackets = true;
+
+        [SynthesisOrder]
+        [SynthesisSettingName("Process Instance Naming Rules")]
+        [SynthesisTooltip("If checked, the patcher will attempt to add tags to custom instance naming rules for weapons and armor.")]
+        public bool PatchINNRs = true;
 
         [SynthesisOrder]
         [SynthesisSettingName("Override Item Type Settings")]

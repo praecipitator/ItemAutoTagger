@@ -20,6 +20,11 @@ namespace ItemTagger.ItemTypeFinder
             }
         }
 
+        public void Add(FormLink<T> formLink)
+        {
+            Add(formLink.FormKey);
+        }
+
         /// <summary>
         ///     Adds a FormKey based on a string in the 01234567:File.esp format
         /// </summary>
