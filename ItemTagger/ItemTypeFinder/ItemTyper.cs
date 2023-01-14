@@ -8,8 +8,6 @@ using Mutagen.Bethesda.Plugins.Exceptions;
 using Mutagen.Bethesda.Plugins.Records;
 using Mutagen.Bethesda.Synthesis;
 using Noggog;
-using System.Diagnostics.Metrics;
-using System.Linq;
 
 namespace ItemTagger.ItemTypeFinder
 {
@@ -161,6 +159,10 @@ namespace ItemTagger.ItemTypeFinder
 
         private readonly Dictionary<FormKey, ItemType> itemOverrides;
 
+        private readonly Dictionary<FormKey, HashSet<FormKey>> innrLookup = new();
+
+        private readonly Dictionary<FormKey, ItemType> itemTypeCache = new();
+
         public ItemTyper(IPatcherState<IFallout4Mod, IFallout4ModGetter> state, List<GenericFormTypeMapping> itemTypeOverrides)
         {
             this.patcherState = state;
@@ -181,7 +183,169 @@ namespace ItemTagger.ItemTypeFinder
             return (type != ItemType.None && TYPES_WEAPON.Contains(type));
         }
 
+        public ItemType GetInnrType(IInstanceNamingRulesGetter innr)
+        {
+            if(itemTypeCache.TryGetValue(innr.FormKey, out var result))
+            {
+                return result;
+            }
+
+            result = GetInnrTypeUncached(innr);
+            itemTypeCache.Add(innr.FormKey, result);
+            return result;
+        }
+        private ItemType GetInnrTypeUncached(IInstanceNamingRulesGetter innr)
+        {
+            // check overrides
+            if (itemOverrides.ContainsKey(innr.FormKey))
+            {
+                return itemOverrides.GetValueOrDefault(innr.FormKey, ItemType.None);
+            }
+
+            return innr.Target switch
+            {
+                InstanceNamingRules.RuleTarget.Armor => GetArmorInnrType(innr),
+                InstanceNamingRules.RuleTarget.Weapon => GetWeaponInnrType(innr),
+                _ => ItemType.None,
+            };
+        }
+
+        private ItemType GetWeaponInnrType(IInstanceNamingRulesGetter innr)
+        {
+            if (!innrLookup.TryGetValue(innr.FormKey, out var outSet) || outSet == null)
+            {
+                return ItemType.None;
+            }
+
+            HashSet<ItemType> foundTypes = new();
+
+            foreach (var item in outSet)
+            {
+                if (patcherState.LinkCache.TryResolve<IWeaponGetter>(item, out var weapon) && weapon != null)
+                {
+                    if (innr.Target != InstanceNamingRules.RuleTarget.Weapon)
+                    {
+                        Console.WriteLine("WARNING: invalid INNR set for Weapon " + weapon.GetDebugString() + ", INNR type is " + innr.Target);
+                        continue;
+                    }
+
+                    var weaponType = GetWeaponType(weapon);
+                    if (weaponType != ItemType.None)
+                    {
+                        foundTypes.Add(weaponType);
+                    }
+                }
+            }
+
+            if (foundTypes.Count == 0)
+            {
+                return ItemType.None;
+            }
+
+            if (foundTypes.Count == 1)
+            {
+                return foundTypes.First();
+            }
+
+            if(foundTypes.Contains(ItemType.WeaponRanged))
+            {
+                return ItemType.WeaponRanged;
+            }
+
+            if (foundTypes.Contains(ItemType.WeaponMelee))
+            {
+                return ItemType.WeaponMelee;
+            }
+
+            if (foundTypes.Contains(ItemType.Grenade))
+            {
+                return ItemType.Grenade;
+            }
+
+            if (foundTypes.Contains(ItemType.Mine))
+            {
+                return ItemType.Mine;
+            }
+
+            return ItemType.WeaponRanged;
+        }
+        private ItemType GetArmorInnrType(IInstanceNamingRulesGetter innr)
+        {
+            if (!innrLookup.TryGetValue(innr.FormKey, out var outSet) || outSet == null)
+            {
+                return ItemType.None;
+            }
+
+            HashSet<ItemType> foundTypes = new();
+
+            foreach (var item in outSet)
+            {
+                if (patcherState.LinkCache.TryResolve<IArmorGetter>(item, out var armor) && armor != null)
+                {
+                    if (innr.Target != InstanceNamingRules.RuleTarget.Armor)
+                    {
+                        Console.WriteLine("WARNING: invalid INNR set for Armor " + armor.GetDebugString() + ", INNR type is " + innr.Target);
+                        continue;
+                    }
+
+                    var armorType = GetArmorType(armor);
+                    if (armorType != ItemType.None)
+                    {
+                        foundTypes.Add(armorType);
+                    }
+                }
+            }
+
+            if(foundTypes.Count == 0)
+            {
+                return ItemType.None;
+            }
+
+            if(foundTypes.Count == 1)
+            {
+                return foundTypes.First();
+            }
+
+            // otherwise: 
+            // { Armor, Clothing, VaultSuit, PowerArmor, PipBoy } -> Armor
+            // { Clothing, VaultSuit, PowerArmor, PipBoy } -> Armor
+            // { Clothing, VaultSuit, PipBoy } -> Clothing
+            // { VaultSuit, PipBoy } -> VaultSuit
+
+            // otherwise, just assume Clothing
+
+            if(foundTypes.Contains(ItemType.Armor) || foundTypes.Contains(ItemType.PowerArmor))
+            {
+                return ItemType.Armor;
+            }
+
+            if (foundTypes.Contains(ItemType.Clothes))
+            {
+                return ItemType.Clothes;
+            }
+
+            if (foundTypes.Contains(ItemType.VaultSuit))
+            {
+                return ItemType.VaultSuit;
+            }
+
+            return ItemType.Clothes;
+        }
+
         public ItemType GetArmorType(IArmorGetter armor)
+        {
+            if (itemTypeCache.TryGetValue(armor.FormKey, out var result))
+            {
+                return result;
+            }
+
+            result = GetArmorTypeUncached(armor);
+            itemTypeCache.Add(armor.FormKey, result);
+
+            return result;
+        }
+
+        private ItemType GetArmorTypeUncached(IArmorGetter armor)
         {
             if (itemOverrides.ContainsKey(armor.FormKey))
             {
@@ -243,6 +407,18 @@ namespace ItemTagger.ItemTypeFinder
         }
 
         public ItemType GetWeaponType(IWeaponGetter weapon)
+        {
+            if (itemTypeCache.TryGetValue(weapon.FormKey, out var result))
+            {
+                return result;
+            }
+
+            result = GetWeaponTypeUncached(weapon);
+            itemTypeCache.Add(weapon.FormKey, result);
+
+            return result;
+        }
+        private ItemType GetWeaponTypeUncached(IWeaponGetter weapon)
         {
             if (itemOverrides.ContainsKey(weapon.FormKey))
             {
@@ -314,6 +490,18 @@ namespace ItemTagger.ItemTypeFinder
         }
 
         public ItemType GetAlchType(IIngestibleGetter alch)
+        {
+            if (itemTypeCache.TryGetValue(alch.FormKey, out var result))
+            {
+                return result;
+            }
+
+            result = GetAlchTypeUncached(alch);
+            itemTypeCache.Add(alch.FormKey, result);
+
+            return result;
+        }
+        private ItemType GetAlchTypeUncached(IIngestibleGetter alch)
         {
             if (itemOverrides.ContainsKey(alch.FormKey))
             {
@@ -508,6 +696,18 @@ namespace ItemTagger.ItemTypeFinder
 
         public ItemType GetHolotapeType(IHolotapeGetter holotape)
         {
+            if (itemTypeCache.TryGetValue(holotape.FormKey, out var result))
+            {
+                return result;
+            }
+
+            result = GetHolotapeTypeUncached(holotape);
+            itemTypeCache.Add(holotape.FormKey, result);
+
+            return result;
+        }
+        private ItemType GetHolotapeTypeUncached(IHolotapeGetter holotape)
+        {
             if (itemOverrides.ContainsKey(holotape.FormKey))
             {
                 return itemOverrides.GetValueOrDefault(holotape.FormKey, ItemType.None);
@@ -558,6 +758,18 @@ namespace ItemTagger.ItemTypeFinder
 
         public ItemType GetBookType(IBookGetter book)
         {
+            if (itemTypeCache.TryGetValue(book.FormKey, out var result))
+            {
+                return result;
+            }
+
+            result = GetBookTypeUncached(book);
+            itemTypeCache.Add(book.FormKey, result);
+
+            return result;
+        }
+        private ItemType GetBookTypeUncached(IBookGetter book)
+        {
             if (itemOverrides.ContainsKey(book.FormKey))
             {
                 return itemOverrides.GetValueOrDefault(book.FormKey, ItemType.None);
@@ -590,6 +802,18 @@ namespace ItemTagger.ItemTypeFinder
 
         public ItemType GetAmmoType(IAmmunitionGetter ammo)
         {
+            if (itemTypeCache.TryGetValue(ammo.FormKey, out var result))
+            {
+                return result;
+            }
+
+            result = GetAmmoTypeUncached(ammo);
+            itemTypeCache.Add(ammo.FormKey, result);
+
+            return result;
+        }
+        private ItemType GetAmmoTypeUncached(IAmmunitionGetter ammo)
+        {
             if (itemOverrides.ContainsKey(ammo.FormKey))
             {
                 return itemOverrides.GetValueOrDefault(ammo.FormKey, ItemType.None);
@@ -615,6 +839,18 @@ namespace ItemTagger.ItemTypeFinder
         }
 
         public ItemType GetKeyType(IKeyGetter keyItem)
+        {
+            if (itemTypeCache.TryGetValue(keyItem.FormKey, out var result))
+            {
+                return result;
+            }
+
+            result = GetKeyTypeUncached(keyItem);
+            itemTypeCache.Add(keyItem.FormKey, result);
+
+            return result;
+        }
+        private ItemType GetKeyTypeUncached(IKeyGetter keyItem)
         {
             if (itemOverrides.ContainsKey(keyItem.FormKey))
             {
@@ -654,6 +890,18 @@ namespace ItemTagger.ItemTypeFinder
         }
 
         public ItemType GetMiscType(IMiscItemGetter miscItem)
+        {
+            if (itemTypeCache.TryGetValue(miscItem.FormKey, out var result))
+            {
+                return result;
+            }
+
+            result = GetMiscTypeUncached(miscItem);
+            itemTypeCache.Add(miscItem.FormKey, result);
+
+            return result;
+        }
+        private ItemType GetMiscTypeUncached(IMiscItemGetter miscItem)
         {
             if(itemOverrides.ContainsKey(miscItem.FormKey))
             {
@@ -741,7 +989,9 @@ namespace ItemTagger.ItemTypeFinder
 
         private void LoadDictionaries()
         {
-            var omods = this.patcherState.LoadOrder.PriorityOrder.AObjectModification().WinningOverrides();
+            var prioLO = patcherState.LoadOrder.PriorityOrder;
+
+            var omods = prioLO.AObjectModification().WinningOverrides();
 
             foreach (var omod in omods)
             {
@@ -752,6 +1002,47 @@ namespace ItemTagger.ItemTypeFinder
             }
 
             // should I do the INNRs here, as well?
+            var armors = prioLO.Armor().WinningOverrides();
+
+            foreach(var armor in armors)
+            {
+                if(armor != null)
+                {
+                    var curInnr = armor.InstanceNaming;
+                    if(!curInnr.IsNull)
+                    {
+                        if(innrLookup.TryGetValue(curInnr.FormKey, out var curSet))
+                        {
+                            curSet.Add(armor.FormKey);
+                        }
+                        else
+                        {
+                            innrLookup.Add(curInnr.FormKey, new() { armor.FormKey });
+                        }
+                    }
+                }
+            }
+
+            var weapons = prioLO.Weapon().WinningOverrides();
+
+            foreach (var weap in weapons)
+            {
+                if (weap != null)
+                {
+                    var curInnr = weap.InstanceNaming;
+                    if (!curInnr.IsNull)
+                    {
+                        if (innrLookup.TryGetValue(curInnr.FormKey, out var curSet))
+                        {
+                            curSet.Add(weap.FormKey);
+                        }
+                        else
+                        {
+                            innrLookup.Add(curInnr.FormKey, new() { weap.FormKey });
+                        }
+                    }
+                }
+            }
         }
 
         private bool IsLooseMod(IMiscItemGetter miscItem)

@@ -18,7 +18,7 @@ namespace ItemTagger
         private readonly TaggingConfiguration taggingConfig;
 
         private readonly TaggerSettings settings;
-        private IPatcherState<IFallout4Mod, IFallout4ModGetter> state;
+        private readonly IPatcherState<IFallout4Mod, IFallout4ModGetter> state;
 
         private readonly ItemTyper itemTyper;
 
@@ -28,7 +28,8 @@ namespace ItemTagger
 
         private static readonly Regex REMOVE_BRACKETS = new(@"^[\[{(](.+)[\]})]$", RegexOptions.Compiled);
 
-        private readonly Dictionary<IInstanceNamingRulesGetter, HashSet<ItemType>> innrTypeMapping;
+
+        private readonly HashSet<IInstanceNamingRulesGetter> relevantInnrs = new();
 
         private readonly HashSet<FormKey> irrelevantInnrs;
 
@@ -44,7 +45,7 @@ namespace ItemTagger
 
             itemTyper = new ItemTyper(state, settings.ItemTypeConfig);
 
-            innrTypeMapping = new();
+            // innrTypeMapping = new();
             irrelevantInnrs = new();
         }
 
@@ -113,11 +114,9 @@ namespace ItemTagger
                 return;
             }
 
-            // now, special case: if this thing has INNRs, don't actually prefix it. Assume it's INNRs are correct.
             if (!item.InstanceNaming.IsNull)
             {
-                //item.FormKey.ToString
-                Console.WriteLine("Not tagging " + item.GetDebugString() + " with " + prefix + ", because it has INNRs");
+                // this should be handled by INNR patching
                 return;
             }
 
@@ -138,45 +137,18 @@ namespace ItemTagger
                 return;
             }
 
-            foreach(var kv in innrTypeMapping)
+            foreach(var innr in relevantInnrs)
             {
-                if(kv.Key == null || kv.Value == null)
+                var type = itemTyper.GetInnrType(innr);
+                if(type != ItemType.None)
                 {
-                    // this shouldn't happen
-                    continue;
-                }
-                var innr = kv.Key;                
-                var types = kv.Value;
-                var numTypes = types.Count;
-                if(numTypes == 0)
-                {
-                    continue;
-                }
-
-                if (numTypes > 1)
-                {
-                    // for now, just use a generic one
-                    switch(innr.Target)
-                    {
-                        case InstanceNamingRules.RuleTarget.Armor:
-                            TagInnr(innr, ItemType.Armor);
-                            break;
-                        case InstanceNamingRules.RuleTarget.Weapon:
-                            TagInnr(innr, ItemType.WeaponRanged);
-                            break;
-                    }
-                }
-                else
-                {
-                    var theType = types.First();
-                    TagInnr(innr, theType);
+                    TagInnr(innr, type);
                 }
             }
         }
 
         private bool IsInnrTagged(IInstanceNamingRulesGetter innr)
         {
-
             foreach(var set in innr.RuleSets)
             {
                 // disregard empty sets until we find a non-empty one
@@ -356,14 +328,7 @@ namespace ItemTagger
                 return;
             }
 
-            if (innrTypeMapping.ContainsKey(innr))
-            {
-                innrTypeMapping[innr].Add(type);
-                return;
-            }
-
-            var newSet = new HashSet<ItemType>() { type };
-            innrTypeMapping[innr] = newSet;
+            relevantInnrs.Add(innr);
         }
 
         private static bool IsInnrTypeCorrect(IInstanceNamingRulesGetter innr, ItemType type)
