@@ -350,8 +350,7 @@ namespace ItemTagger
                 return;
             }
 
-            IInstanceNamingRulesGetter? innr = null;
-            if (!ShouldPatchINNR(innrGetter, type, out innr) || innr == null)
+            if (!ShouldPatchINNR(innrGetter, type, out IInstanceNamingRulesGetter? innr) || innr == null)
             {
                 irrelevantInnrs.Add(innrGetter.FormKey);
                 return;
@@ -367,7 +366,7 @@ namespace ItemTagger
             innrTypeMapping[innr] = newSet;
         }
 
-        private bool IsInnrTypeCorrect(IInstanceNamingRulesGetter innr, ItemType type)
+        private static bool IsInnrTypeCorrect(IInstanceNamingRulesGetter innr, ItemType type)
         {
             switch (innr.Target)
             {

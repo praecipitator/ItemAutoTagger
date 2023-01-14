@@ -158,5 +158,19 @@ namespace ItemTagger.Helper
 
             list[0] = prevElem;
         }
+
+        public static Dictionary<FormKey, ItemType> GetAsDictionary(this List<GenericFormTypeMapping> list)
+        {
+            Dictionary<FormKey, ItemType> result = new();
+            foreach (var entry in list)
+            {
+                if (entry.form.IsNull)
+                {
+                    continue;
+                }
+                result.Set(entry.form.FormKey, entry.type);
+            }
+            return result;
+        }
     }
 }

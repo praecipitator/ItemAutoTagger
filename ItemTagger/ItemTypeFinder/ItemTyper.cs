@@ -161,11 +161,11 @@ namespace ItemTagger.ItemTypeFinder
 
         private readonly Dictionary<FormKey, ItemType> itemOverrides;
 
-        public ItemTyper(IPatcherState<IFallout4Mod, IFallout4ModGetter> state, ItemTypeOverrides itemTypeOverrides)
+        public ItemTyper(IPatcherState<IFallout4Mod, IFallout4ModGetter> state, List<GenericFormTypeMapping> itemTypeOverrides)
         {
             this.patcherState = state;
 
-            itemOverrides = itemTypeOverrides.GetMergedOverrides();
+            itemOverrides = itemTypeOverrides.GetAsDictionary();
             itemOverrides.MergeWithoutOverwrite(itemTypeData.hardcodedOverrides);
 
             LoadDictionaries();
@@ -750,6 +750,8 @@ namespace ItemTagger.ItemTypeFinder
                     looseModToOmodLookup[omod.LooseMod.FormKey] = omod.FormKey;
                 }
             }
+
+            // should I do the INNRs here, as well?
         }
 
         private bool IsLooseMod(IMiscItemGetter miscItem)
