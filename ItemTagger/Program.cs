@@ -3,16 +3,15 @@ using ItemTagger.TaggingConfigs;
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.Fallout4;
 using Mutagen.Bethesda.Synthesis;
-using System.Text.RegularExpressions;
 
 namespace ItemTagger
 {
     public class Program
     {
-        static Lazy<TaggerSettings> _lazySettings = null!;
-        static TaggerSettings Settings => _lazySettings.Value;
+        private static Lazy<TaggerSettings> _lazySettings = null!;
+        private static TaggerSettings Settings => _lazySettings.Value;
 
-        static DefaultTaggingConfigurations defaultTaggingConfigs = new();
+        private static DefaultTaggingConfigurations defaultTaggingConfigs = new();
 
         public static async Task<int> Main(string[] args)
         {
@@ -38,7 +37,7 @@ namespace ItemTagger
 
         private static TaggingConfiguration getTaggingConfigByType(TaggingConfigType type)
         {
-            if(type != TaggingConfigType.Custom)
+            if (type != TaggingConfigType.Custom)
             {
                 return defaultTaggingConfigs.getConfigByType(type);
             }

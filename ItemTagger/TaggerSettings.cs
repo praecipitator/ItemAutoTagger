@@ -1,5 +1,5 @@
-using ItemTagger.TaggingConfigs;
 using ItemTagger.ItemTypeFinder;
+using ItemTagger.TaggingConfigs;
 using Mutagen.Bethesda.Fallout4;
 using Mutagen.Bethesda.Plugins;
 using Mutagen.Bethesda.Plugins.Records;
@@ -39,13 +39,14 @@ namespace ItemTagger
         [SynthesisTooltip("If you selected \"Custom\" under Tagging Configuration, you can configure your tags here.")]
         public CustomTaggingConfig CustomConfig = new();
     }
-    
+
     public class FormTypeMapping<T>
-        where T: class, IMajorRecordGetter
+        where T : class, IMajorRecordGetter
     {
         [SynthesisOrder]
         [SynthesisSettingName("Item")]
         public IFormLinkGetter<T> form = FormLink<T>.Null;
+
         [SynthesisOrder]
         [SynthesisSettingName("Type")]
         [SynthesisTooltip("Select \"None\" to blacklist this item")]
@@ -96,6 +97,7 @@ namespace ItemTagger
         [SynthesisSettingName("Mod")]
         [SynthesisTooltip("Loose modification")]
         public string tagLooseMod = "";
+
         [SynthesisOrder]
         [SynthesisSettingName("Collectible")]
         [SynthesisTooltip("\"Collectible\" MISC")]
@@ -185,7 +187,7 @@ namespace ItemTagger
         [SynthesisSettingName("News")]
         [SynthesisTooltip("Newspaper, mostly Publick Occurences")]
         public string tagNews = "";
-        
+
         [SynthesisOrder]
         [SynthesisSettingName("Note")]
         [SynthesisTooltip("Any other paper note")]

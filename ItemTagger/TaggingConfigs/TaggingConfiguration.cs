@@ -12,7 +12,6 @@ namespace ItemTagger.TaggingConfigs
 
         public TaggingConfiguration()
         {
-
         }
 
         /// <summary>

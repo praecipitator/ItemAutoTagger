@@ -1,7 +1,7 @@
-using System.Text.RegularExpressions;
-using Mutagen.Bethesda.FormKeys.Fallout4;
 using Mutagen.Bethesda.Fallout4;
+using Mutagen.Bethesda.FormKeys.Fallout4;
 using Mutagen.Bethesda.Plugins;
+using System.Text.RegularExpressions;
 
 namespace ItemTagger.ItemTypeFinder
 {
@@ -11,15 +11,18 @@ namespace ItemTagger.ItemTypeFinder
 
         // blacklists
         public readonly MatchingList blacklistScript = new();
+
         public readonly MatchingList blacklistEdid = new();
         public readonly MatchingList blacklistName = new();
 
         // whitelists
         public readonly MatchingList whitelistModelTool = new();
+
         public readonly MatchingList whitelistModelDevice = new();
 
         // models
         public readonly MatchingList modelListCard = new();
+
         public readonly MatchingList modelListKey = new();
         public readonly MatchingList modelListPassword = new();
         public readonly MatchingList modelListFoodCrop = new();
@@ -44,6 +47,7 @@ namespace ItemTagger.ItemTypeFinder
 
         // keywords
         public readonly MatchingFormList<IKeywordGetter> keywordsWeaponMelee = new();
+
         public readonly MatchingFormList<IKeywordGetter> keywordsGlobalBlacklist = new();
         public readonly MatchingFormList<IKeywordGetter> keywordsPerkmag = new();
         public readonly MatchingFormList<IKeywordGetter> keywordsQuest = new();
@@ -55,6 +59,7 @@ namespace ItemTagger.ItemTypeFinder
 
         // sounds
         public readonly MatchingFormList<ISoundDescriptorGetter> soundListFood = new();
+
         public readonly MatchingFormList<ISoundDescriptorGetter> soundListChem = new();
         public readonly MatchingFormList<ISoundDescriptorGetter> soundListDevice = new();
         public readonly MatchingFormList<ISoundDescriptorGetter> soundListTool = new();
@@ -62,13 +67,13 @@ namespace ItemTagger.ItemTypeFinder
         public readonly MatchingFormList<IInstanceNamingRulesGetter> innrListSkip = new();
 
         // regexes? regices? regex objects for matching special stuff
-        private static readonly Regex MATCH_MODEL_MODEL  = new(@"card[^\\]*\.nif$",  RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant);
-        private static readonly Regex MATCH_MODEL_NOTE   = new(@"note[^\\]\.nif$",   RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex MATCH_MODEL_MODEL = new(@"card[^\\]*\.nif$", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
+        private static readonly Regex MATCH_MODEL_NOTE = new(@"note[^\\]\.nif$", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant);
         private static readonly Regex MATCH_MODEL_PIPBOY = new(@"pipboy[^\\]\.nif$", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
         // hard overrides
         public readonly Dictionary<FormKey, ItemType> hardcodedOverrides = new();
-
 
         public ItemTypeData()
         {
@@ -77,7 +82,7 @@ namespace ItemTagger.ItemTypeFinder
             keywordsWeaponMelee.Add(Fallout4.Keyword.WeaponTypeUnarmed);
 
             blacklistScript.AddExactMatch(
-                "simsettlements:simbuildingplan", 
+                "simsettlements:simbuildingplan",
                 "simsettlements:simstory",
                 "simsettlements:cityplan",
                 "simsettlements:simplanpath",
@@ -228,7 +233,7 @@ namespace ItemTagger.ItemTypeFinder
             );
 
             whitelistModelNews.AddExactMatch(
-                "props\\newspaperpublickoccurenceslowpoly.nif", 
+                "props\\newspaperpublickoccurenceslowpoly.nif",
                 "SS_IndRev\\Props\\NewspaperNewBugle.nif"
               );
 
@@ -253,14 +258,14 @@ namespace ItemTagger.ItemTypeFinder
             );
 
             modelListCard.AddExactMatch(
-                "props\\generickeycard01.nif", 
+                "props\\generickeycard01.nif",
                 "props\\vaultidcard.nif"
             );
 
             modelListCard.AddRegexMatch(MATCH_MODEL_MODEL);
 
             modelListPassword.AddExactMatch(
-                "props\\holotape_prop.nif", 
+                "props\\holotape_prop.nif",
                 "interface\\newspaper\\noteripped.nif",
                 "props\\note_lowpoly.nif"
             );
@@ -284,8 +289,6 @@ namespace ItemTagger.ItemTypeFinder
                 "automatron\\automatron.swf"
             );
 
-            
-
             nameListSettings.AddPrefixMatch(" - ");
             nameListSettings.AddSubstringMatch("setting", "config");
 
@@ -302,7 +305,6 @@ namespace ItemTagger.ItemTypeFinder
 
             keywordListFood.Add(Fallout4.Keyword.FruitOrVegetable);
             keywordListFood.Add(Fallout4.Keyword.ObjectTypeFood);
-
 
             keywordListFoodDisease.Add(Fallout4.Keyword.HC_DiseaseRisk_FoodHigh);
             keywordListFoodDisease.Add(Fallout4.Keyword.HC_DiseaseRisk_FoodStandard);
@@ -324,7 +326,6 @@ namespace ItemTagger.ItemTypeFinder
             soundListFood.Add(Fallout4.SoundDescriptor.NPCHumanEatEgg);
             soundListFood.Add(Fallout4.SoundDescriptor.NPCHumanEatSoup);
             soundListFood.Add(Fallout4.SoundDescriptor.NPCHumanEatSoupSlurp);
-
 
             soundListChem.Add(Fallout4.SoundDescriptor.NPCHumanEatMentats);
             soundListChem.Add(Fallout4.SoundDescriptor.NPCHumanChemsPsycho);
@@ -359,7 +360,7 @@ namespace ItemTagger.ItemTypeFinder
             innrListSkip.Add(Robot.InstanceNamingRules.DLC01dn_LightningGun.FormKey);
             innrListSkip.Add(Robot.InstanceNamingRules.DLC01dn_PowerArmor.FormKey);
 
-            // TODO: 
+            // TODO:
             // SimSettlementsV2:ObjectReferences:DeployableCityPlannersDesk -> city planner's desk -> tool? device?
 
             // edid matches
@@ -371,7 +372,6 @@ namespace ItemTagger.ItemTypeFinder
             edidMatchLists
                 .GetListForType(ItemType.GoodChem)
                 .AddPrefixMatch("kgSIM_MedicalResearch_");
-
 
             edidMatchLists
                 .GetListForType(ItemType.Quest)
@@ -401,7 +401,6 @@ namespace ItemTagger.ItemTypeFinder
                     "BotModel",
                     "DLC04ParkMedallion"
                 );
-
 
             edidMatchLists
                 .GetListForType(ItemType.Shipment)

@@ -1,15 +1,15 @@
-using ItemTagger.ItemTypeFinder;
-using Mutagen.Bethesda.Fallout4;
-using Mutagen.Bethesda;
-using Mutagen.Bethesda.Synthesis;
-using System.Text.RegularExpressions;
-using ItemTagger.TaggingConfigs;
-using Mutagen.Bethesda.Plugins.Aspects;
-using Noggog;
-using Mutagen.Bethesda.Plugins.Exceptions;
-using Mutagen.Bethesda.FormKeys.Fallout4;
 using ItemTagger.Helper;
+using ItemTagger.ItemTypeFinder;
+using ItemTagger.TaggingConfigs;
+using Mutagen.Bethesda;
+using Mutagen.Bethesda.Fallout4;
+using Mutagen.Bethesda.FormKeys.Fallout4;
 using Mutagen.Bethesda.Plugins;
+using Mutagen.Bethesda.Plugins.Aspects;
+using Mutagen.Bethesda.Plugins.Exceptions;
+using Mutagen.Bethesda.Synthesis;
+using Noggog;
+using System.Text.RegularExpressions;
 
 namespace ItemTagger
 {
@@ -27,7 +27,6 @@ namespace ItemTagger
         private static readonly Regex TAG_STRIP_COMPONENTS = new(@"{{{[^{}]*}}}\s*$", RegexOptions.Compiled);
 
         private static readonly Regex REMOVE_BRACKETS = new(@"^[\[{(](.+)[\]})]$", RegexOptions.Compiled);
-
 
         private readonly HashSet<IInstanceNamingRulesGetter> relevantInnrs = new();
 
@@ -66,7 +65,7 @@ namespace ItemTagger
 
         private static string GetTaggedName(string newTag, string inputName, string suffix = "")
         {
-            if(newTag == "")
+            if (newTag == "")
             {
                 return inputName + suffix;
             }
@@ -76,7 +75,7 @@ namespace ItemTagger
 
         private void ProcessArmors()
         {
-            foreach(var armor in state.LoadOrder.PriorityOrder.Armor().WinningOverrides())
+            foreach (var armor in state.LoadOrder.PriorityOrder.Armor().WinningOverrides())
             {
                 var prevName = armor.Name?.String;
 
@@ -86,7 +85,7 @@ namespace ItemTagger
                 }
 
                 var curType = itemTyper.GetArmorType(armor);
-                switch(curType)
+                switch (curType)
                 {
                     case ItemType.Armor:
                     case ItemType.Clothes:
@@ -94,6 +93,7 @@ namespace ItemTagger
                     case ItemType.PowerArmor:
                         ProcessArmorWithINNRs(armor, curType);
                         break;
+
                     default:
                         ProcessArmorWithoutINNRs(prevName, armor, curType);
                         break;
@@ -121,7 +121,7 @@ namespace ItemTagger
             }
 
             var nameBase = CleanName(prevName);
-            if(nameBase.Length == 0)
+            if (nameBase.Length == 0)
             {
                 return;
             }
@@ -132,15 +132,15 @@ namespace ItemTagger
 
         private void ProcessInnrs()
         {
-            if(!settings.PatchINNRs)
+            if (!settings.PatchINNRs)
             {
                 return;
             }
 
-            foreach(var innr in relevantInnrs)
+            foreach (var innr in relevantInnrs)
             {
                 var type = itemTyper.GetInnrType(innr);
-                if(type != ItemType.None)
+                if (type != ItemType.None)
                 {
                     TagInnr(innr, type);
                 }
@@ -149,17 +149,17 @@ namespace ItemTagger
 
         private bool IsInnrTagged(IInstanceNamingRulesGetter innr)
         {
-            foreach(var set in innr.RuleSets)
+            foreach (var set in innr.RuleSets)
             {
                 // disregard empty sets until we find a non-empty one
-                if(set == null || set.Names == null)
+                if (set == null || set.Names == null)
                 {
                     continue;
                 }
 
-                foreach(var n in set.Names)
+                foreach (var n in set.Names)
                 {
-                    if(n.Name != null && !n.Name.String.IsNullOrEmpty())
+                    if (n.Name != null && !n.Name.String.IsNullOrEmpty())
                     {
                         var theString = n.Name.String;
                         // we found a non-empty name, make the stuff depend on this
@@ -167,7 +167,6 @@ namespace ItemTagger
                         return (IsValidTag(theString) || HasValidTag(theString));
                     }
                 }
-
             }
             return false;
         }
@@ -187,24 +186,23 @@ namespace ItemTagger
             //  - there are no empty rulesets nowhere
             //      -> take the first ruleset, whatever it is. Prefix all the names with the tag.
             //      -> If there isn't one without conditions, append a new one, containing just the tag.
-            
 
             var firstNotEmpty = -1;
             var lastNotEmpty = -1;
             var i = 0;
-            foreach(var set in innr.RuleSets)
+            foreach (var set in innr.RuleSets)
             {
                 var isEmpty = false;
-                if(set.Names == null)
+                if (set.Names == null)
                 {
                     isEmpty = true;
                 }
                 else
                 {
                     isEmpty = true;
-                    foreach(var n in set.Names)
+                    foreach (var n in set.Names)
                     {
-                        if(n.Name != null && !n.Name.String.IsNullOrEmpty())
+                        if (n.Name != null && !n.Name.String.IsNullOrEmpty())
                         {
                             isEmpty = false;
                             break;
@@ -212,13 +210,13 @@ namespace ItemTagger
                     }
                 }
 
-                if(!isEmpty)
-                {  
-                    if(i > lastNotEmpty)
+                if (!isEmpty)
+                {
+                    if (i > lastNotEmpty)
                     {
                         lastNotEmpty = i;
                     }
-                    if(firstNotEmpty < 0)
+                    if (firstNotEmpty < 0)
                     {
                         firstNotEmpty = i;
                     }
@@ -226,9 +224,8 @@ namespace ItemTagger
                 i++;
             }
 
-
             var newOverride = state.PatchMod.InstanceNamingRules.GetOrAddAsOverride(innr);
-            
+
             // we have space to move forward
             if (lastNotEmpty < 9)
             {
@@ -240,7 +237,7 @@ namespace ItemTagger
             }
 
             // there is an empty one at the front, reuse it
-            if(firstNotEmpty > 0)
+            if (firstNotEmpty > 0)
             {
                 //var newOverride = state.PatchMod.InstanceNamingRules.GetOrAddAsOverride(innr);
                 int lastEmpty = firstNotEmpty - 1;
@@ -250,25 +247,25 @@ namespace ItemTagger
             }
 
             // finally, take entry 0, prefix all of the strings there
-            bool haveUnconditional =  false;
+            bool haveUnconditional = false;
             InstanceNamingRuleSet firstRs = newOverride.RuleSets[0];
             firstRs.Names ??= new();// this shouldn't actually be null, the loop above should have caught that
             foreach (var n in firstRs.Names)
             {
-                if((n.Keywords == null || n.Keywords.Count == 0) && (n.Properties == null))
+                if ((n.Keywords == null || n.Keywords.Count == 0) && (n.Properties == null))
                 {
                     haveUnconditional = true;
                 }
                 string? properStringName = n.Name?.String;
 
-                if(properStringName.IsNullOrEmpty())
+                if (properStringName.IsNullOrEmpty())
                 {
                     n.Name = prefix;
                 }
                 else
                 {
                     var nameBase = CleanName(properStringName);
-                    
+
                     if (nameBase.IsNullOrEmpty())
                     {
                         n.Name = prefix;
@@ -276,10 +273,10 @@ namespace ItemTagger
                     else
                     {
                         n.Name = GetTaggedName(prefix, nameBase);
-                    }            
+                    }
                 }
             }
-            if(!haveUnconditional)
+            if (!haveUnconditional)
             {
                 // append a new one
                 var namingRule = new InstanceNamingRule
@@ -341,12 +338,14 @@ namespace ItemTagger
                         return false;
                     }
                     break;
+
                 case InstanceNamingRules.RuleTarget.Weapon:
                     if (!ItemTyper.IsTypeWeapon(type))
                     {
                         return false;
                     }
                     break;
+
                 default:
                     return false;
             }
@@ -402,17 +401,20 @@ namespace ItemTagger
             // set an INNR
             if (armor.InstanceNaming.IsNull)
             {
-                switch(armorType)
+                switch (armorType)
                 {
                     case ItemType.VaultSuit:
                         newOverride.InstanceNaming.SetTo(Fallout4.InstanceNamingRules.dn_VaultSuit);
                         break;
+
                     case ItemType.PowerArmor:
                         newOverride.InstanceNaming.SetTo(Fallout4.InstanceNamingRules.dn_PowerArmor);
                         break;
+
                     case ItemType.Clothes:
                         newOverride.InstanceNaming.SetTo(Fallout4.InstanceNamingRules.dn_Clothes);
                         break;
+
                     default:
                         newOverride.InstanceNaming.SetTo(Fallout4.InstanceNamingRules.dn_CommonArmor);
                         break;
@@ -424,7 +426,6 @@ namespace ItemTagger
                 CheckInnrForPatching(armor.InstanceNaming, armorType);
             }
 
-
             if (0 == (armor.ObjectTemplates?.Count ?? 0))
             {
                 newOverride.ObjectTemplates ??= new();
@@ -434,12 +435,11 @@ namespace ItemTagger
                     AddonIndex = -1
                 });
             }
-
         }
 
         private void ProcessWeapons()
         {
-            foreach(var weap in state.LoadOrder.PriorityOrder.Weapon().WinningOverrides())
+            foreach (var weap in state.LoadOrder.PriorityOrder.Weapon().WinningOverrides())
             {
                 var prevName = weap.Name?.String;
 
@@ -450,12 +450,13 @@ namespace ItemTagger
 
                 var curType = itemTyper.GetWeaponType(weap);
 
-                switch(curType)
+                switch (curType)
                 {
                     case ItemType.WeaponRanged:
                     case ItemType.WeaponMelee:
                         ProcessWeaponWithINNRs(weap, curType);
                         break;
+
                     default:
                         ProcessWeaponWithoutINNRs(prevName, weap, curType);
                         break;
@@ -477,7 +478,7 @@ namespace ItemTagger
             }
 
             // this shouldn't actually happen...
-            if(!item.InstanceNaming.IsNull)
+            if (!item.InstanceNaming.IsNull)
             {
                 //item.FormKey.ToString
                 Console.WriteLine("Not tagging " + item.GetDebugString() + " with " + prefix + ", because it has INNRs");
@@ -490,14 +491,14 @@ namespace ItemTagger
                 return;
             }
             var newItem = state.PatchMod.Weapons.GetOrAddAsOverride(item);
-            
+
             newItem.Name = GetTaggedName(prefix, nameBase);
         }
 
         private void ProcessWeaponWithINNRs(IWeaponGetter weapon, ItemType type)
         {
             // do we even need to process this?
-            if(!weapon.InstanceNaming.IsNull && weapon.ObjectTemplates?.Count > 0)
+            if (!weapon.InstanceNaming.IsNull && weapon.ObjectTemplates?.Count > 0)
             {
                 CheckInnrForPatching(weapon.InstanceNaming, type);
                 return;
@@ -508,22 +509,21 @@ namespace ItemTagger
             // set an INNR
             if (weapon.InstanceNaming.IsNull)
             {
-                if(type == ItemType.WeaponMelee)
+                if (type == ItemType.WeaponMelee)
                 {
                     newOverride.InstanceNaming.SetTo(Fallout4.InstanceNamingRules.dn_CommonMelee);
-                } 
+                }
                 else
                 {
                     newOverride.InstanceNaming.SetTo(Fallout4.InstanceNamingRules.dn_CommonGun);
                 }
-
             }
             else
             {
                 CheckInnrForPatching(weapon.InstanceNaming, type);
             }
 
-            if((weapon.ObjectTemplates?.Count ?? 0) == 0)
+            if ((weapon.ObjectTemplates?.Count ?? 0) == 0)
             {
                 newOverride.ObjectTemplates ??= new();
                 newOverride.ObjectTemplates.Add(new ObjectTemplate<Weapon.Property>()
@@ -532,14 +532,13 @@ namespace ItemTagger
                     AddonIndex = -1
                 });
             }
-         
         }
 
         private void ProcessAlch()
         {
-            foreach(var alch in state.LoadOrder.PriorityOrder.Ingestible().WinningOverrides())
+            foreach (var alch in state.LoadOrder.PriorityOrder.Ingestible().WinningOverrides())
             {
-                try 
+                try
                 {
                     var prevName = alch.Name?.String;
 
@@ -551,7 +550,6 @@ namespace ItemTagger
                     var curType = itemTyper.GetAlchType(alch);
 
                     TagItem(prevName, alch, curType, state.PatchMod.Ingestibles);
-
                 }
                 catch (Exception ex)
                 {
@@ -562,7 +560,7 @@ namespace ItemTagger
 
         private void ProcessHolotapes()
         {
-            foreach(var tape in state.LoadOrder.PriorityOrder.Holotape().WinningOverrides())
+            foreach (var tape in state.LoadOrder.PriorityOrder.Holotape().WinningOverrides())
             {
                 try
                 {
@@ -586,9 +584,9 @@ namespace ItemTagger
 
         private void ProcessBooks()
         {
-            foreach(var book in state.LoadOrder.PriorityOrder.Book().WinningOverrides())
+            foreach (var book in state.LoadOrder.PriorityOrder.Book().WinningOverrides())
             {
-                try 
+                try
                 {
                     var prevName = book.Name?.String;
 
@@ -611,9 +609,9 @@ namespace ItemTagger
         private void ProcessAmmo()
         {
             var ammos = state.LoadOrder.PriorityOrder.Ammunition().WinningOverrides();
-            foreach(var ammo in ammos)
+            foreach (var ammo in ammos)
             {
-                try 
+                try
                 {
                     var prevName = ammo.Name?.String;
                     if (prevName.IsNullOrEmpty() || HasValidTag(prevName))
@@ -623,7 +621,6 @@ namespace ItemTagger
 
                     var curType = itemTyper.GetAmmoType(ammo);
                     TagItem(prevName, ammo, curType, state.PatchMod.Ammunitions);
-
                 }
                 catch (Exception ex)
                 {
@@ -635,7 +632,7 @@ namespace ItemTagger
         private void ProcessKeys()
         {
             var keys = state.LoadOrder.PriorityOrder.Key().WinningOverrides();
-            foreach(var key in keys)
+            foreach (var key in keys)
             {
                 try
                 {
@@ -666,12 +663,12 @@ namespace ItemTagger
                 try
                 {
                     ProcessMisc(misc);
-                } 
+                }
                 /*catch(ArgumentOutOfRangeException e)
                 {
                     Console.WriteLine("Exception while processing "+misc.FormKey.ToString()+": "+e.Message+". This might be a bug in Synthesis...");
                 }*/
-                catch(Exception e)
+                catch (Exception e)
                 {
                     throw RecordException.Enrich(e, misc);
                 }
@@ -724,22 +721,22 @@ namespace ItemTagger
                 else
                 {
                     TagItem(prevName, misc, curType, state.PatchMod.MiscItems);
-                }                
+                }
             }
         }
 
         private string CleanName(string name, bool stripAllTags = false)
         {
             name = TAG_STRIP_COMPONENTS.Replace(name, "").Trim();
-            if(name.Length == 0)
+            if (name.Length == 0)
             {
                 return "";
             }
 
-            if(stripAllTags)
+            if (stripAllTags)
             {
                 var existingTag = ExtractTag(name);
-                if(existingTag != "")
+                if (existingTag != "")
                 {
                     name = name[(existingTag.Length + 3)..];
                 }
@@ -778,7 +775,6 @@ namespace ItemTagger
 
             return name;
         }
-
 
         private void TagItem<T>(string prevName, IFallout4MajorRecordGetter item, ItemType type, Fallout4Group<T> group, IReadOnlyList<IMiscItemComponentGetter>? components)
             where T : Fallout4MajorRecord, ITranslatedNamedRequired
@@ -823,7 +819,7 @@ namespace ItemTagger
                 .Select(kwName => kwName == null ? "" : CleanName(kwName, true))
                 .Where(kwName => kwName != "") ?? new List<string>();
 
-            if(!cmpNames.Any())
+            if (!cmpNames.Any())
             {
                 return "";
             }
@@ -883,17 +879,14 @@ namespace ItemTagger
             }
             else
             {
-                if(!onlyWithBrackets)
+                if (!onlyWithBrackets)
                 {
                     // no bracket removal matches, so this is
                     return false;
                 }
             }
 
-
             return taggingConfig.IsTagValid(name);
         }
-
-
     }
 }
