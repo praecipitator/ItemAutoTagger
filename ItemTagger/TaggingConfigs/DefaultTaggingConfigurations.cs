@@ -2,8 +2,6 @@ using ItemTagger.ItemTypeFinder;
 
 namespace ItemTagger.TaggingConfigs
 {
-
-
     internal class DefaultTaggingConfigurations
     {
         private readonly IDictionary<TaggingConfigType, TaggingConfiguration> defaultConfigs = new Dictionary<TaggingConfigType, TaggingConfiguration>();
@@ -62,7 +60,6 @@ namespace ItemTagger.TaggingConfigs
             );
 
             defaultConfigs.Add(TaggingConfigType.FIS, configSettingFIS);
-
 
             // LWIS
             TaggingConfiguration configSettingLWIS = new()

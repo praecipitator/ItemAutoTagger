@@ -4,11 +4,6 @@ using Mutagen.Bethesda.Plugins;
 using Mutagen.Bethesda.Plugins.Aspects;
 using Mutagen.Bethesda.Plugins.Records;
 using Noggog;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ItemTagger.Helper
 {
@@ -39,7 +34,7 @@ namespace ItemTagger.Helper
 
         public static bool IsAnyOf<T>(this T? thisEntry, IEnumerable<T> list)
         {
-            if(thisEntry == null)
+            if (thisEntry == null)
             {
                 return false;
             }
@@ -64,6 +59,7 @@ namespace ItemTagger.Helper
             }
             return false;
         }
+
         public static bool HasAnyScript(this IHaveVirtualMachineAdapterGetter item, MatchingList list)
         {
             if (item.VirtualMachineAdapter?.Scripts == null)
@@ -77,7 +73,7 @@ namespace ItemTagger.Helper
         public static ItemType? GetMatchingTypeByScript(this IHaveVirtualMachineAdapterGetter item, MatchingListSet listSet)
         {
             var scripts = item.VirtualMachineAdapter?.Scripts;
-            if(null == scripts)
+            if (null == scripts)
             {
                 return null;
             }
@@ -106,9 +102,9 @@ namespace ItemTagger.Helper
         /// <param name="thisDict"></param>
         /// <param name="otherDict"></param>
         public static void MergeWithOverwrite<TKey, TValue>(this Dictionary<TKey, TValue> thisDict, Dictionary<TKey, TValue> otherDict)
-            where TKey: notnull
+            where TKey : notnull
         {
-            foreach(var pair in otherDict)
+            foreach (var pair in otherDict)
             {
                 thisDict[pair.Key] = pair.Value;
             }
@@ -126,7 +122,7 @@ namespace ItemTagger.Helper
         {
             foreach (var pair in otherDict)
             {
-                if(!thisDict.ContainsKey(pair.Key))
+                if (!thisDict.ContainsKey(pair.Key))
                 {
                     thisDict[pair.Key] = pair.Value;
                 }
@@ -135,12 +131,47 @@ namespace ItemTagger.Helper
 
         public static string GetDebugString(this IMajorRecordGetter item)
         {
-            if(item.EditorID == null)
+            if (item.EditorID == null)
             {
                 return item.FormKey.ToString();
             }
 
             return item.FormKey.ToString() + " " + item.EditorID;
+        }
+
+        /// <summary>
+        /// Shift elements forward by 1, putting the last element into the first place
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="list"></param>
+        public static void ShiftByOne<T>(this ExtendedList<T> list)
+        {
+            var cnt = list.Count;
+            if (cnt == 0)
+            {
+                return;
+            }
+            var prevElem = list[0];
+            for (var i = 1; i < cnt; i++)
+            {
+                (prevElem, list[i]) = (list[i], prevElem);
+            }
+
+            list[0] = prevElem;
+        }
+
+        public static Dictionary<FormKey, ItemType> GetAsDictionary(this List<GenericFormTypeMapping> list)
+        {
+            Dictionary<FormKey, ItemType> result = new();
+            foreach (var entry in list)
+            {
+                if (entry.form.IsNull)
+                {
+                    continue;
+                }
+                result.Set(entry.form.FormKey, entry.type);
+            }
+            return result;
         }
     }
 }

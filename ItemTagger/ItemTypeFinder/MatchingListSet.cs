@@ -1,12 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace ItemTagger.ItemTypeFinder
 {
-    internal class MatchingListSet: Dictionary<ItemType, MatchingList>
+    internal class MatchingListSet : Dictionary<ItemType, MatchingList>
     {
         /// <summary>
         /// Returns the first type in the given subset for which there is a MatchingList which machtes for the given string
@@ -16,16 +10,16 @@ namespace ItemTagger.ItemTypeFinder
         /// <returns>An ItemType if anything matched, null otherwise</returns>
         public ItemType? GetMatchingType(string? input, params ItemType[] subset)
         {
-            if(input == null)
+            if (input == null)
             {
                 return null;
             }
-            foreach(var checkType in subset)
+            foreach (var checkType in subset)
             {
                 var curList = this.GetValueOrDefault(checkType);
-                if(null != curList)
+                if (null != curList)
                 {
-                    if(curList.Matches(input))
+                    if (curList.Matches(input))
                     {
                         return checkType;
                     }
@@ -42,13 +36,13 @@ namespace ItemTagger.ItemTypeFinder
         /// <returns>An ItemType if anything matched, null otherwise</returns>
         public ItemType? GetMatchingType(string? input)
         {
-            if(input == null)
+            if (input == null)
             {
                 return null;
             }
             foreach (var pair in this)
             {
-                if(pair.Value.Matches(input))
+                if (pair.Value.Matches(input))
                 {
                     return pair.Key;
                 }

@@ -1,11 +1,5 @@
 using ItemTagger.Helper;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace ItemTagger.ItemTypeFinder
 {
@@ -19,7 +13,7 @@ namespace ItemTagger.ItemTypeFinder
 
         public MatchingList()
         {
-            //exactMatchList.Comparer = new CaseInsensitiveComparer<string>(); 
+            //exactMatchList.Comparer = new CaseInsensitiveComparer<string>();
             //prefixMatchList.inter
         }
 
@@ -57,28 +51,28 @@ namespace ItemTagger.ItemTypeFinder
 
             return this;
         }
-        
+
         public bool MatchesAny(IEnumerable<string?> list)
         {
             return list.Any(str => Matches(str));
         }
 
-
         /**
          * Returns true if the given string matches to anything within this MatchingList
          */
+
         public bool Matches(string? str)
         {
-            if(null == str)
+            if (null == str)
             {
                 return false;
             }
-            if(exactMatchList.Contains(str, StringComparer.OrdinalIgnoreCase))
+            if (exactMatchList.Contains(str, StringComparer.OrdinalIgnoreCase))
             {
                 return true;
             }
 
-            if(prefixMatchList.Any(prefix => str.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)))
+            if (prefixMatchList.Any(prefix => str.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)))
             {
                 return true;
             }
@@ -95,6 +89,5 @@ namespace ItemTagger.ItemTypeFinder
 
             return regexMatchList.Any(regex => regex.IsMatch(str));
         }
-
     }
 }

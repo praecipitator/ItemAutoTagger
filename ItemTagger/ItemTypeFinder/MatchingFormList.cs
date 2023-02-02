@@ -1,23 +1,23 @@
 using Mutagen.Bethesda.Plugins;
 using Mutagen.Bethesda.Plugins.Records;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ItemTagger.ItemTypeFinder
 {
-    internal class MatchingFormList<T>: HashSet<FormLinkGetter<T>>
+    internal class MatchingFormList<T> : HashSet<FormLinkGetter<T>>
         where T : class, IMajorRecordGetter
     {
         public void Add(FormKey formKey)
         {
             var formLink = formKey.ToLink<T>();
-            if(null != formLink)
+            if (null != formLink)
             {
                 base.Add(formLink);
             }
+        }
+
+        public void Add(FormLink<T> formLink)
+        {
+            Add(formLink.FormKey);
         }
 
         /// <summary>
