@@ -3,6 +3,7 @@ using Mutagen.Bethesda.Fallout4;
 using Mutagen.Bethesda.Plugins;
 using Mutagen.Bethesda.Plugins.Aspects;
 using Mutagen.Bethesda.Plugins.Records;
+using Mutagen.Bethesda.Strings;
 using Noggog;
 
 namespace ItemTagger.Helper
@@ -172,6 +173,32 @@ namespace ItemTagger.Helper
                 result.Set(entry.form.FormKey, entry.type);
             }
             return result;
+        }
+
+        public static string ToNonNullString(this Mutagen.Bethesda.Strings.ITranslatedStringGetter? str)
+        {
+            if (str == null)
+            {
+                return "";
+            }
+
+            string? actualStr = str.ToString();
+            if (actualStr == null)
+            {
+                return "";
+            }
+
+            return actualStr;
+        }
+
+        public static string ToNonNullString(this TranslatedString? str)
+        {
+            if (str == null)
+            {
+                return "";
+            }
+
+            return str.ToString();
         }
     }
 }

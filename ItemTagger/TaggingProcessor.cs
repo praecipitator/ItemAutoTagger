@@ -98,6 +98,8 @@ namespace ItemTagger
                         ProcessArmorWithoutINNRs(prevName, armor, curType);
                         break;
                 }
+                // in any case, do template names
+                ProcessArmorTemplateNames(armor, curType);
             }
         }
 
@@ -461,6 +463,8 @@ namespace ItemTagger
                         ProcessWeaponWithoutINNRs(prevName, weap, curType);
                         break;
                 }
+                // in any case, do template names
+                ProcessWeaponTemplateNames(weap, curType);
             }
         }
 
@@ -531,6 +535,94 @@ namespace ItemTagger
                     Default = true,
                     AddonIndex = -1
                 });
+            }
+        }
+
+        private bool ShouldProcessTemplates<T>(IReadOnlyList<IObjectTemplateGetter<T>> templates) where T : struct, Enum
+        {
+            foreach (var template in templates)
+            {
+                if (!template.IsEditorOnly)
+                {
+                    var name = template.Name.ToNonNullString();
+                    if(name != "" && !HasValidTag(name))
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        private void ProcessArmorTemplateNames(IArmorGetter armor, ItemType type)
+        {
+            if (type == ItemType.None)
+            {
+                return;
+            }
+            var srcTemplates = armor.ObjectTemplates;
+            if (srcTemplates == null || srcTemplates.Count <= 0 || !ShouldProcessTemplates(srcTemplates))
+            {
+                return;
+            }
+
+            var prefix = taggingConfig[type];
+            if (prefix == "")
+            {
+                return;
+            }
+
+            // need override here
+            var newOverride = state.PatchMod.Armors.GetOrAddAsOverride(armor);
+            ExtendedList<ObjectTemplate<Armor.Property>>? newTemplates = newOverride.ObjectTemplates;
+            if (newTemplates == null)
+            {
+                // this shouldn't happen
+                return;
+            }
+
+            TagTemplateNames(newTemplates, prefix);
+        }
+
+        private void ProcessWeaponTemplateNames(IWeaponGetter weapon, ItemType type)
+        {
+            if (type == ItemType.None)
+            {
+                return;
+            }
+            var srcTemplates = weapon.ObjectTemplates;
+            if (srcTemplates == null || srcTemplates.Count <= 0 || !ShouldProcessTemplates(srcTemplates))
+            {
+                return;
+            }
+
+            var prefix = taggingConfig[type];
+            if (prefix == "")
+            {
+                return;
+            }
+
+            // need override here
+            var newOverride = state.PatchMod.Weapons.GetOrAddAsOverride(weapon);
+            ExtendedList<ObjectTemplate<Weapon.Property>>? newTemplates = newOverride.ObjectTemplates;
+            if(newTemplates == null)
+            {
+                // this shouldn't happen
+                return;
+            }
+
+            TagTemplateNames(newTemplates, prefix);
+        }
+
+        private void TagTemplateNames<T>(ExtendedList<ObjectTemplate<T>> newTemplates, string prefix) where T : struct, Enum
+        {
+            foreach (var template in newTemplates)
+            {
+                string curName = template.Name.ToNonNullString();
+                if (!template.IsEditorOnly && curName != "" && !HasValidTag(curName))
+                {
+                    template.Name = GetTaggedName(prefix, curName);
+                }
             }
         }
 
