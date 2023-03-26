@@ -59,6 +59,8 @@ namespace ItemTagger
             // now, equipment
             ProcessWeapons();
             ProcessArmors();
+            // NEW: leveled items
+            ProcessLeveledItems();
             // finally, INNRs
             ProcessInnrs();
         }
@@ -291,6 +293,41 @@ namespace ItemTagger
             }
 
             // Console.WriteLine("Could not autopatch INNR " + innr.ToString() + ": found no empty ruleset.");
+        }
+
+        private void ProcessLeveledItems()
+        {
+            foreach (var lvli in state.LoadOrder.PriorityOrder.LeveledItem().WinningOverrides())
+            {
+                var name = lvli.OverrideName.ToNonNullString();
+                if (name == "" || lvli.Entries == null || HasValidTag(name))
+                {
+                    continue;
+                }
+
+                var type = itemTyper.GetLeveledItemType(lvli);
+                TagLeveledItem(lvli, type);
+            }
+        }
+
+        private void TagLeveledItem(ILeveledItemGetter item, ItemType type)
+        {
+            if(type == ItemType.None)
+            {
+                return;
+            }
+
+            var prefix = taggingConfig[type];
+            if(prefix == "")
+            {
+                return;
+            }
+
+            // otherwise do it
+            var newOverride = state.PatchMod.LeveledItems.GetOrAddAsOverride(item);
+            //newItem.Name = GetTaggedName(prefix, nameBase);
+            var baseName = CleanName(newOverride.OverrideName.ToNonNullString());
+            newOverride.OverrideName = GetTaggedName(prefix, baseName);
         }
 
         private static InstanceNamingRuleSet GetNewNamingRuleSet(string name, ushort index = 10000)

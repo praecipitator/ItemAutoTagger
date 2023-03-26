@@ -12,7 +12,7 @@ namespace ItemTagger
     {
         [SynthesisOrder]
         [SynthesisSettingName("Tagging Configuration")]
-        public TaggingConfigType TaggingConfig = TaggingConfigType.FIS;
+        public TaggingConfigType TaggingConfig = TaggingConfigType.LIS;
 
         [SynthesisOrder]
         [SynthesisSettingName("Append components")]

@@ -14,15 +14,18 @@ namespace ItemTagger.ItemTypeFinder
             {
                 return null;
             }
+            // always do the NONE list first
+            var noneList = this.GetValueOrDefault(ItemType.None);
+            if(null != noneList && noneList.Matches(input))
+            {
+                return ItemType.None;             
+            }
             foreach (var checkType in subset)
             {
                 var curList = this.GetValueOrDefault(checkType);
-                if (null != curList)
+                if (null != curList && curList.Matches(input))
                 {
-                    if (curList.Matches(input))
-                    {
-                        return checkType;
-                    }
+                    return checkType;                 
                 }
             }
 

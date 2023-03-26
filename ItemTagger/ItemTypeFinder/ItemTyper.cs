@@ -77,7 +77,6 @@ namespace ItemTagger.ItemTypeFinder
     public class ItemTyper
     {
         private static readonly ItemType[] TYPES_ARMOR = {
-            ItemType.None,
             ItemType.Armor,
             ItemType.PowerArmor,
             ItemType.Clothes,
@@ -86,7 +85,6 @@ namespace ItemTagger.ItemTypeFinder
         };
 
         private static readonly ItemType[] TYPES_WEAPON = {
-            ItemType.None,
             ItemType.WeaponMelee,
             ItemType.WeaponRanged,
             ItemType.Grenade,
@@ -95,8 +93,12 @@ namespace ItemTagger.ItemTypeFinder
             ItemType.Device
         };
 
+        private static readonly ItemType[] TYPES_WEAPON_EXPLOSIVE = {
+            ItemType.Grenade,
+            ItemType.Mine,
+        };
+
         private static readonly ItemType[] TYPES_ALCH = {
-            ItemType.None,
             ItemType.BadChem,
             ItemType.Device,
             ItemType.Drink,
@@ -112,33 +114,28 @@ namespace ItemTagger.ItemTypeFinder
         };
 
         private static readonly ItemType[] TYPES_AMMO = {
-            ItemType.None,
             ItemType.Ammo
         };
 
         private static readonly ItemType[] TYPES_HOLOTAPE = {
-            ItemType.None,
             ItemType.Holotape,
             ItemType.HolotapeGame,
             ItemType.HolotapeSettings
         };
 
         private static readonly ItemType[] TYPES_BOOK = {
-            ItemType.None,
             ItemType.News,
             ItemType.Note,
             ItemType.Perkmag
         };
 
         private static readonly ItemType[] TYPES_KEY = {
-            ItemType.None,
             ItemType.Key,
             ItemType.KeyCard,
             ItemType.KeyPassword
         };
 
         private static readonly ItemType[] TYPES_MISC = {
-            ItemType.None,
             ItemType.Ammo,
             ItemType.Collectible,
             ItemType.Currency,
@@ -177,6 +174,62 @@ namespace ItemTagger.ItemTypeFinder
             LoadDictionaries();
         }
 
+        /// <summary>
+        /// Tries to figure out if the given set of item types can be categorized into any of
+        /// Armor, Grenade, WeaponRanged, GoodChem, Ammo, Holotape, Note, Key, Misc
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        public static ItemType ReduceItemTypeSet(HashSet<ItemType> input)
+        {
+            if(TYPES_ARMOR.ContainsAll(input))
+            {
+                return ItemType.Armor;
+            }
+
+            if(TYPES_WEAPON_EXPLOSIVE.ContainsAll(input))
+            {
+                return ItemType.Grenade;
+            }
+
+            if(TYPES_WEAPON.ContainsAll(input))
+            {
+                return ItemType.WeaponRanged;
+            }
+
+            if(TYPES_ALCH.ContainsAll(input))
+            {
+                return ItemType.GoodChem;
+            }
+
+            if(TYPES_AMMO.ContainsAll(input))
+            {
+                return ItemType.Ammo;
+            }
+
+            if (TYPES_HOLOTAPE.ContainsAll(input))
+            {
+                return ItemType.Holotape;
+            }
+
+            if(TYPES_BOOK.ContainsAll(input))
+            {
+                return ItemType.Note;
+            }
+
+            if (TYPES_KEY.ContainsAll(input))
+            {
+                return ItemType.Key;
+            }
+
+            if(TYPES_MISC.ContainsAll(input))
+            {
+                return ItemType.OtherMisc;
+            }
+
+            return ItemType.None;
+        }
+
         public static bool IsTypeArmor(ItemType type)
         {
             return (type != ItemType.None && TYPES_ARMOR.Contains(type));
@@ -185,6 +238,65 @@ namespace ItemTagger.ItemTypeFinder
         public static bool IsTypeWeapon(ItemType type)
         {
             return (type != ItemType.None && TYPES_WEAPON.Contains(type));
+        }
+
+        public ItemType GetUnknownItemType(IItemGetter item)
+        {
+            return item switch
+            {
+                IWeaponGetter weapon => GetWeaponType(weapon),
+                IArmorGetter armor => GetArmorType(armor),
+                IMiscItemGetter misc => GetMiscType(misc),
+                IKeyGetter key => GetKeyType(key),
+                IAmmunitionGetter ammo => GetAmmoType(ammo),
+                IBookGetter book => GetBookType(book),
+                IHolotapeGetter tape => GetHolotapeType(tape),
+                IIngestibleGetter alch => GetAlchType(alch),
+                ILeveledItemGetter lvli => GetLeveledItemType(lvli),
+                _ => ItemType.None,
+            };
+        }
+
+        public ItemType GetLeveledItemType(ILeveledItemGetter item)
+        {
+            if (itemTypeCache.TryGetValue(item.FormKey, out var result))
+            {
+                return result;
+            }
+
+            result = GetLeveledItemTypeUncached(item);
+            itemTypeCache.Add(item.FormKey, result);
+            return result;
+        }
+
+        public ItemType GetLeveledItemTypeUncached(ILeveledItemGetter lvli)
+        {
+            if(lvli.Entries == null)
+            {
+                return ItemType.None;
+            }
+            HashSet<ItemType> foundTypes = new();
+            foreach (var entry in lvli.Entries)
+            {
+                if (entry.Data == null)
+                {
+                    continue;
+                }
+                //if (patcherState.LinkCache.TryResolve<IWeaponGetter>(item, out var weapon) && weapon != null)
+                var item = entry.Data.Reference.TryResolve(patcherState.LinkCache);
+                if (item == null)
+                {
+                    continue;
+                }
+                var curType = GetUnknownItemType(item);
+                foundTypes.Add(curType);
+            }
+            return foundTypes.Count switch
+            {
+                0 => ItemType.None,
+                1 => foundTypes.First(),
+                _ => ReduceItemTypeSet(foundTypes),
+            };
         }
 
         public ItemType GetInnrType(IInstanceNamingRulesGetter innr)
