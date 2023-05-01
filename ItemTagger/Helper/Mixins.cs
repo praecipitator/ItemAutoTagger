@@ -3,6 +3,7 @@ using Mutagen.Bethesda.Fallout4;
 using Mutagen.Bethesda.Plugins;
 using Mutagen.Bethesda.Plugins.Aspects;
 using Mutagen.Bethesda.Plugins.Records;
+using Mutagen.Bethesda.Strings;
 using Noggog;
 
 namespace ItemTagger.Helper
@@ -13,13 +14,26 @@ namespace ItemTagger.Helper
         /// Checks if this enumerable contains any entry from the other list.
         /// If possible, call this on a set-like enumerable, where .contains is more efficient
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="thisList">This list, .contains will be called on it</param>
-        /// <param name="otherList">Other list, .any will be called on it</param>
-        /// <returns></returns>
+        /// <typeparam name="T">anything</typeparam>
+        /// <param name="thisList">This list, .Contains will be called on it</param>
+        /// <param name="otherList">Other list, .Any will be called on it</param>
+        /// <returns>bool</returns>
         public static bool ContainsAny<T>(this IEnumerable<T> thisList, IEnumerable<T> otherList)
         {
             return otherList.Any(entry => thisList.Contains(entry));
+        }
+
+        /// <summary>
+        /// Checks if this enumerable contains all entries from the other list.
+        /// If possible, call this on a set-like enumerable, where .contains is more efficient
+        /// </summary>
+        /// <typeparam name="T">anything</typeparam>
+        /// <param name="thisList">This list, .Contains will be called on it</param>
+        /// <param name="otherList">Other list, .All will be called on it</param>
+        /// <returns>bool</returns>
+        public static bool ContainsAll<T>(this IEnumerable<T> thisList, IEnumerable<T> otherList)
+        {
+            return otherList.All(entry => thisList.Contains(entry));
         }
 
         public static bool HasAnyKeyword(this IKeywordedGetter<IKeywordGetter> thisItem, IEnumerable<IFormLinkGetter<IKeywordGetter>> otherList)
@@ -172,6 +186,42 @@ namespace ItemTagger.Helper
                 result.Set(entry.form.FormKey, entry.type);
             }
             return result;
+        }
+
+        /// <summary>
+        /// like toString(), but will always return "" instead of null
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
+        public static string ToNonNullString(this ITranslatedStringGetter? str)
+        {
+            if (str == null)
+            {
+                return "";
+            }
+
+            string? actualStr = str.ToString();
+            if (actualStr == null)
+            {
+                return "";
+            }
+
+            return actualStr;
+        }
+
+        /// <summary>
+        /// like toString(), but will always return "" instead of null
+        /// </summary>
+        /// <param name="str"></param>
+        /// <returns></returns>
+        public static string ToNonNullString(this TranslatedString? str)
+        {
+            if (str == null)
+            {
+                return "";
+            }
+
+            return str.ToString();
         }
     }
 }
