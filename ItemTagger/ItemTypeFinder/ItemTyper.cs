@@ -772,7 +772,8 @@ namespace ItemTagger.ItemTypeFinder
                 return ItemType.GoodChem;
             }
 
-            return ItemType.None;
+            // probably better than not tagging it
+            return ItemType.GoodChem;
         }
 
         /// <summary>
