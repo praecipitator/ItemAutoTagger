@@ -1,5 +1,8 @@
 namespace ItemTagger.ItemTypeFinder
 {
+    /// <summary>
+    /// A set of MatchingLists, grouped by ItemType. Can look for a given input string in all of them, until it finds a matching type
+    /// </summary>
     internal class MatchingListSet : Dictionary<ItemType, MatchingList>
     {
         /// <summary>

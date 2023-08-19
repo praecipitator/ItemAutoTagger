@@ -46,6 +46,42 @@ namespace ItemTagger.Helper
             return otherList.ContainsAny(thisItem.Keywords);
         }
 
+        public static ItemType? GetMatchingTypeByKeyword(this MatchingFormListSet<IKeywordGetter> listSet, IKeywordedGetter<IKeywordGetter> item)
+        {
+            if (item.Keywords == null)
+            {
+                return null;
+            }
+
+            foreach(var pair in listSet)
+            {
+                if(item.HasAnyKeyword(pair.Value))
+                {
+                    return pair.Key;
+                }
+            }
+
+            return null;
+        }
+
+        public static ItemType? GetMatchingTypeByKeyword(this MatchingFormListSet<IKeywordGetter> listSet, IKeywordedGetter<IKeywordGetter> item, params ItemType[] filterTypes)
+        {
+            if (item.Keywords == null)
+            {
+                return null;
+            }
+
+            foreach(var type in filterTypes)
+            {
+                if(item.HasAnyKeyword(listSet.GetListForType(type)))
+                {
+                    return type;
+                }
+            }
+
+            return null;
+        }
+
         public static bool IsAnyOf<T>(this T? thisEntry, IEnumerable<T> list)
         {
             if (thisEntry == null)
@@ -94,6 +130,25 @@ namespace ItemTagger.Helper
             foreach (var script in scripts)
             {
                 var maybeResult = listSet.GetMatchingType(script.Name);
+                if (maybeResult != null)
+                {
+                    return maybeResult;
+                }
+            }
+
+            return null;
+        }
+
+        public static ItemType? GetMatchingTypeByScript(this IHaveVirtualMachineAdapterGetter item, MatchingListSet listSet, params ItemType[] itemTypes)
+        {
+            var scripts = item.VirtualMachineAdapter?.Scripts;
+            if (null == scripts)
+            {
+                return null;
+            }
+            foreach (var script in scripts)
+            {
+                var maybeResult = listSet.GetMatchingType(script.Name, itemTypes);
                 if (maybeResult != null)
                 {
                     return maybeResult;

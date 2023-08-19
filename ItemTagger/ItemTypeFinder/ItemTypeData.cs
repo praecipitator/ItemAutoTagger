@@ -1,6 +1,7 @@
 using Mutagen.Bethesda.Fallout4;
 using Mutagen.Bethesda.FormKeys.Fallout4;
 using Mutagen.Bethesda.Plugins;
+using Noggog;
 using System.Text.RegularExpressions;
 
 namespace ItemTagger.ItemTypeFinder
@@ -14,73 +15,79 @@ namespace ItemTagger.ItemTypeFinder
 
         public readonly MatchingList blacklistEdid = new();
         public readonly MatchingList blacklistName = new();
+        public readonly MatchingFormList<IKeywordGetter> keywordsGlobalBlacklist = new();
 
+        // TODO refactor this. use MatchingListSets
         // whitelists
-        public readonly MatchingList whitelistModelTool = new();
-
-        public readonly MatchingList whitelistModelDevice = new();
-
         // models
-        public readonly MatchingList modelListCard = new();
+        // public readonly MatchingList modelListTool = new();
 
-        public readonly MatchingList modelListKey = new();
-        public readonly MatchingList modelListPassword = new();
-        public readonly MatchingList modelListFoodCrop = new();
+        //public readonly MatchingList modelListStealthboy = new();
+        //public readonly MatchingList modelListDevice = new();
 
-        public readonly MatchingList modelListPipBoy = new();
-        public readonly MatchingList scriptListPipBoy = new();
-        public readonly MatchingList scriptListPerkMag = new();
 
-        public readonly MatchingList whitelistModelNews = new();
-        public readonly MatchingList scriptListNews = new();
+        // public readonly MatchingList modelListCard = new();
 
+        // public readonly MatchingList modelListKey = new();
+        // public readonly MatchingList modelListPassword = new();
+
+        // public readonly MatchingList modelListFoodCrop = new();
+        // public readonly MatchingList modelListNews = new();
+        // public readonly MatchingList modelListPipBoy = new();
+
+        // scripts
+        // public readonly MatchingList scriptListPipBoy = new();
+        // public readonly MatchingList scriptListPerkMag = new();
+        // public readonly MatchingList scriptListNews = new();
+
+        // programs (holotapes only)
         public readonly MatchingList programListGame = new();
+
+        // names
         public readonly MatchingList nameListSettings = new();
 
-        // edid lists
-        //public readonly MatchingList edidListSettings = new();
-        //public readonly MatchingList edidListGoodChem = new();
+        // Matching list sets
+        public readonly MatchingListSet matchSetEdid = new();
+        public readonly MatchingListSet matchSetScript = new();
+        public readonly MatchingListSet matchSetModel = new();
 
-        public readonly MatchingListSet edidMatchLists = new();
-
-        public readonly MatchingListSet scriptMatchLists = new();
 
         // keywords
-        public readonly MatchingFormList<IKeywordGetter> keywordsWeaponMelee = new();
+        public readonly MatchingFormListSet<IKeywordGetter> matchSetKeyword = new();
+        // special, to tell foods apart
+        public readonly MatchingFormListSet<IKeywordGetter> matchSetKeywordFood = new();
 
-        public readonly MatchingFormList<IKeywordGetter> keywordsGlobalBlacklist = new();
-        public readonly MatchingFormList<IKeywordGetter> keywordsPerkmag = new();
-        public readonly MatchingFormList<IKeywordGetter> keywordsQuest = new();
-        public readonly MatchingFormList<IKeywordGetter> keywordListDrink = new();
-        public readonly MatchingFormList<IKeywordGetter> keywordListFood = new();
-        public readonly MatchingFormList<IKeywordGetter> keywordListFoodDisease = new();
-        public readonly MatchingFormList<IKeywordGetter> keywordListDevice = new();
+        // leave this separate, because this requires the addiction check
         public readonly MatchingFormList<IKeywordGetter> keywordListChem = new();
 
         // sounds
+        public readonly MatchingFormListSet<ISoundDescriptorGetter> matchSetSound = new();
+        // leave these 2 separately
         public readonly MatchingFormList<ISoundDescriptorGetter> soundListFood = new();
-
         public readonly MatchingFormList<ISoundDescriptorGetter> soundListChem = new();
-        public readonly MatchingFormList<ISoundDescriptorGetter> soundListDevice = new();
-        public readonly MatchingFormList<ISoundDescriptorGetter> soundListTool = new();
+
+        // public readonly MatchingFormList<ISoundDescriptorGetter> soundListDevice = new();
+        // public readonly MatchingFormList<ISoundDescriptorGetter> soundListTool = new();
 
         public readonly MatchingFormList<IInstanceNamingRulesGetter> innrListSkip = new();
 
         // regexes? regices? regex objects for matching special stuff
-        private static readonly Regex MATCH_MODEL_MODEL = new(@"card[^\\]*\.nif$", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant);
-
+        private static readonly Regex MATCH_MODEL_CARD = new(@"card[^\\]*\.nif$", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant);
         private static readonly Regex MATCH_MODEL_NOTE = new(@"note[^\\]\.nif$", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant);
         private static readonly Regex MATCH_MODEL_PIPBOY = new(@"pipboy[^\\]\.nif$", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
+        private static readonly Regex MATCH_SS2_PLUGINNAME = new(@"^.*SS2.*_PluginName_", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex MATCH_SS2_CPDESIGNER = new(@"^.*SS2.*_CPDesigner_", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex MATCH_SS2_TEMPLATE = new(@"^.*SS2.*_Template", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex MATCH_SS2_WEAPLIST = new(@"^.*SS2.*_WeaponList_", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        private static readonly Regex MATCH_SS2_THEMESELECTOR = new(@"^.*SS2.*_ThemeSelector_", RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        //"SS2_ThemeSelector_EmpireFlag"
         // hard overrides
         public readonly Dictionary<FormKey, ItemType> hardcodedOverrides = new();
 
         public ItemTypeData()
         {
-            keywordsWeaponMelee.Add(Fallout4.Keyword.WeaponTypeMelee1H);
-            keywordsWeaponMelee.Add(Fallout4.Keyword.WeaponTypeMelee2H);
-            keywordsWeaponMelee.Add(Fallout4.Keyword.WeaponTypeUnarmed);
-
+            // == Blacklists ==
             blacklistScript.AddExactMatch(
                 "simsettlements:simbuildingplan",
                 "simsettlements:simstory",
@@ -110,7 +117,11 @@ namespace ItemTagger.ItemTypeFinder
                 "workshopframework:library:objectrefs:preventlooting",
                 "workshopplus:objectreferences:blueprint",
                 "simsettlementsv2:objectreferences:unitselectorform",
-                "SimSettlementsV2:MiscObjects:WorldRepopulationCell"
+                "SimSettlementsV2:MiscObjects:WorldRepopulationCell",
+                "simsettlementsv2:miscobjects:ideologychoice",
+                "simsettlementsv2:miscobjects:factionname",
+                "SimSettlementsV2:MiscObjects:Disaster_AttackDefinition",
+                "VFX:MiscObjects:UniversalUnlockable"
             );
 
             blacklistScript.AddPrefixMatch(
@@ -129,10 +140,15 @@ namespace ItemTagger.ItemTypeFinder
                 "HM_UnassignedLabel"
             );
 
+            // let's just ignore ALL nameholders
+            blacklistEdid.AddSubstringMatch(
+                "Nameholder"
+            );
+
             blacklistEdid.AddPrefixMatch(
                 "DN015_NoneNameMisc",
                 "DummyNoEdit_",
-                "SS2_NameHolder_",
+                //"SS2_NameHolder_",
                 "SS2_SettlerDiscovery_",
                 "SS2_Unlockable_",
                 "SS2_LeaderTrait_",
@@ -147,7 +163,7 @@ namespace ItemTagger.ItemTypeFinder
                 "HC_HungerEffect_",
                 "HC_SleepEffect_",
                 "HC_ThirstEffect_",
-                "WSFW_NameHolder_",
+                //"WSFW_NameHolder_",
                 "kgConq_AssaultQuestVerb_",
                 "RECYCLED_MISC_",
                 "WSFW_Blank",
@@ -155,7 +171,7 @@ namespace ItemTagger.ItemTypeFinder
                 "MS02NukeMissileFar",
                 "WorkshopArtilleryWeapon",
                 "GasTrapDummy",
-                "SS2C2_Nameholder_",
+                //"SS2C2_Nameholder_",
                 "SS2_HQWorkerSelectForm_",
                 "kgSIM_TextReplace_",
                 "SS2RotC_PluginName_",
@@ -163,10 +179,114 @@ namespace ItemTagger.ItemTypeFinder
                 "SS2_Tag_VRWorldspaceConfig_",
                 "SS2_DisasterInfestationDefinition_",
                 "SS2_DisasterAttackDefinition__",
-                "SS2_VRWorldspaceConfig_"
+                "SS2_VRWorldspaceConfig_",
+                "VFX-SS2_Template_UnlockableCharacter_",
+                "VFX-SS2__UnlockableGenericNew_",
+                //"WV_ProductionNameHolder_",
+                "SS2_TerritoryTrait_",
+                "SS2_LoadoutDescription_",
+                "SS2C2_DoNotUse_Obsolete",
+                "SS2_C3_MapMarkerHandler_",
+                "kgSIM_VIPStory",
+                "praLibrary_PrizeDummy_"
              );
 
-            whitelistModelTool.AddExactMatch(
+            blacklistEdid.AddRegexMatch(
+                MATCH_SS2_THEMESELECTOR,
+                MATCH_SS2_PLUGINNAME,
+                MATCH_SS2_CPDESIGNER,
+                MATCH_SS2_TEMPLATE,
+                MATCH_SS2_WEAPLIST
+            );
+
+            keywordsGlobalBlacklist.Add(
+                "01F43E:SS2.esm", // SS2_Tag_PetName
+                "01F43F:SS2.esm"  // SS2_Tag_NPCName
+            ); 
+
+            // == EDIDs ==
+
+            matchSetEdid
+                .GetListForType(ItemType.Holotape)
+                .AddPrefixMatch(
+                    "praSS2_HolotapeDummy_"
+                );
+
+            matchSetEdid
+                .GetListForType(ItemType.HolotapeSettings)
+                .AddSubstringMatch("setting", "config", "cheat");
+
+            matchSetEdid
+                .GetListForType(ItemType.GoodChem)
+                .AddPrefixMatch("kgSIM_MedicalResearch_");
+
+            matchSetEdid
+                .GetListForType(ItemType.Quest)
+                .AddPrefixMatch(
+                    "DLC01MQ03RobotPart",
+                    "SS2_QuestItem_",
+                    "SS2C2_QuestItem_",
+                    "kgSIM_EnergySignatureScanner_",
+                    "DLC06WorkshopControlBoard",
+                    "kgSIM_IndRev_Fuse",
+                    "DLC03_Banner_",
+                    "SS2C2_NQ01_Inv_BookCrate"
+                )
+                .AddExactMatch(
+                    "kgSIM_MicrofusionSubImage",
+                    "SS2_WC_ArchonPlans",
+                    "SS2_MQ07_TechnicalDocument",
+                    "SS2_MQ12JakesScrewdriver",
+                    "kgSIM_MedicalResearch_MixedSample",
+                    "kgSIM_IndRev_ActiveCore"
+                );
+
+            matchSetEdid
+                .GetListForType(ItemType.Collectible)
+                .AddPrefixMatch(
+                    "SS2_PurchaseableJunkSculpture_",
+                    "BotModel",
+                    "DLC04ParkMedallion"
+                );
+
+            matchSetEdid
+                .GetListForType(ItemType.Shipment)
+                .AddPrefixMatch(
+                    "SS2_PriorityShipment_",
+                    "SS2E_PurchaseablePet_",
+                    "SS2_PurchaseablePet_",
+                    "SS2_PurchaseableFurniture_",
+                    "ESM_MISC_"
+                );
+
+            matchSetEdid
+                .GetListForType(ItemType.OtherMisc)
+                .AddPrefixMatch("SS2_LootBox_");
+
+            matchSetEdid
+                .GetListForType(ItemType.Device)
+                .AddExactMatch(
+                    "SS2_ASAM_SensorScanner",
+                    "kgSIM_EnergySignatureScanner_Inventory",
+                    "SS2_SalvageBeacon",
+                    "SS2_Mark1Beacon",
+                    "SS2UI_MenuOpener"
+                );
+
+            matchSetEdid
+                .GetListForType(ItemType.LooseMod)
+                .AddPrefixMatch(
+                    "pa_comp_T60_" // these things are configured in a really weird way, so, hardcoding them like this
+                );
+
+            matchSetEdid
+                .GetListForType(ItemType.Book)
+                .AddPrefixMatch(
+                    "SS2_BookStoreStock_"
+                );
+
+            // == Models ==
+            matchSetModel.GetListForType(ItemType.Tool).AddExactMatch(
                 "autobuildplots\\weapons\\hammer\\hammer.nif",
                 "props\\smithingtools\\smithingtoolhammer01a.nif",
                 "props\\smithingtools\\smithingtoolhammer01b.nif",
@@ -188,9 +308,16 @@ namespace ItemTagger.ItemTypeFinder
                 "props\\fishingreel.nif"
             );
 
-            whitelistModelDevice.AddExactMatch(
-                "props\\stealthboy01.nif",
+            /*
+             * there are LOTS of togglers etc which use the stealthboy nif
+            matchSetModel.GetListForType(ItemType.StealthBoy).AddExactMatch(
+                "props\\stealthboy01.nif" 
+            );
+            */
+
+            matchSetModel.GetListForType(ItemType.Device).AddExactMatch(
                 "dlc01\\props\\dlc01_robotrepairkit01.nif",
+                "props\\stealthboy01.nif",
                 "props\\bs101radiotransmittor.nif",
                 "props\\bosdistresspulser\\bosdistresspulserglowing.nif",
                 "props\\boscerebrofusionadaptor\\boscerebrofusionadaptor.nif",
@@ -223,7 +350,6 @@ namespace ItemTagger.ItemTypeFinder
                 "props\\chipboard.nif",
                 "setdressing\\quest\\genprototype01.nif",
                 "props\\vacuumtube01.nif",
-                "props\\stealthboy01.nif",
                 "weapons\\grenade\\transmitgrenadeprojectile.nif",
                 "props\\pipboymiscitem\\pipboymisc01.nif",
                 "dlc06\\props\\pipboymiscitem\\dlc06pipboymisc01.nif",
@@ -232,23 +358,31 @@ namespace ItemTagger.ItemTypeFinder
                 "SS2\\Props\\ASAMTop_Moveable.nif"
             );
 
-            whitelistModelNews.AddExactMatch(
-                "props\\newspaperpublickoccurenceslowpoly.nif",
-                "SS_IndRev\\Props\\NewspaperNewBugle.nif"
-              );
+            matchSetModel.GetListForType(ItemType.News)
+                .AddExactMatch(
+                    "props\\newspaperpublickoccurenceslowpoly.nif",
+                    "SS_IndRev\\Props\\NewspaperNewBugle.nif",
+                    "SS2C2\\Props\\Newspaper.nif",
+                    "Props\\Newspaper01.nif",
+                    "Props\\Newspaper02.nif"
+                  );
 
-            scriptListNews.AddExactMatch(
-                "SimSettlements:Newspaper", "SimSettlementsV2:Books:NewsArticle"
-            );
+            matchSetModel.GetListForType(ItemType.Book)
+                .AddExactMatch(
+                    "RealBooks\\BurntBook01.nif"
+                  );
 
-            keywordsGlobalBlacklist.Add("01F43E:SS2.esm"); // SS2_Tag_PetName
-            keywordsGlobalBlacklist.Add("01F43F:SS2.esm"); // SS2_Tag_NPCName
+            matchSetModel.GetListForType(ItemType.Perkmag)
+                .AddExactMatch(
+                    "SS_IndRev\\Props\\Magazine.nif"
+                  )
+                .AddPrefixMatch(
+                    "Props\\GrognakComic\\",
+                    "MunkySpunk\\Props\\Comic_"
+                );
 
-            keywordsPerkmag.Add(Fallout4.Keyword.PerkMagKeyword);
-            scriptListPerkMag.AddExactMatch("CA_SkillMagazineScript");
-
-            // keys
-            modelListKey.AddExactMatch("props\\key01.nif",
+            matchSetModel.GetListForType(ItemType.Key).AddExactMatch(
+                "props\\key01.nif",
                 "props\\key02.nif",
                 "props\\key02.nif",
                 "props\\key_chain01.nif",
@@ -257,28 +391,162 @@ namespace ItemTagger.ItemTypeFinder
                 "props\\ms07key.nif"
             );
 
-            modelListCard.AddExactMatch(
-                "props\\generickeycard01.nif",
-                "props\\vaultidcard.nif"
+            matchSetModel.GetListForType(ItemType.KeyCard)
+                .AddExactMatch(
+                    "props\\generickeycard01.nif",
+                    "props\\vaultidcard.nif"
+                )
+                .AddRegexMatch(MATCH_MODEL_CARD);
+
+            matchSetModel.GetListForType(ItemType.KeyPassword)
+                .AddExactMatch(
+                    "props\\holotape_prop.nif",
+                    "interface\\newspaper\\noteripped.nif",
+                    "props\\note_lowpoly.nif"
+                )
+                .AddRegexMatch(MATCH_MODEL_NOTE);
+
+            matchSetModel.GetListForType(ItemType.FoodCrop)
+                .AddExactMatch("Landscape\\Plants\\Ingredients\\WastelandFungusStalkIngredient01.nif");
+
+            matchSetModel.GetListForType(ItemType.PipBoy)
+                .AddRegexMatch(MATCH_MODEL_PIPBOY);
+
+            matchSetModel.GetListForType(ItemType.FusionCore)
+                .AddExactMatch("Ammo\\FusionCore\\FusionCore.nif");
+
+            matchSetModel.GetListForType(ItemType.MiniNuke)
+                .AddExactMatch(
+                    "Ammo\\FatMan\\AmmoFatMan.nif",
+                    "DLC04\\Ammo\\DLC04AmmoNukaNuke.nif"
+                );
+
+            // == Scripts ==
+            matchSetScript.GetListForType(ItemType.News)
+                .AddExactMatch(
+                    "SimSettlements:Newspaper", "SimSettlementsV2:Books:NewsArticle"
+                );
+
+            matchSetScript.GetListForType(ItemType.Perkmag)
+               .AddExactMatch(
+                    "CA_SkillMagazineScript",
+                    "SimSettlementsV2:Books:MagazineIssue"
+               );
+
+            matchSetScript.GetListForType(ItemType.PipBoy)
+               .AddSuffixMatch("PipboyMiscItemScript");
+
+            matchSetScript.GetListForType(ItemType.Tool)
+                .AddExactMatch("SimSettlementsV2:ObjectReferences:DeployableCityPlannersDesk");
+
+            matchSetScript
+                .GetListForType(ItemType.Holotape)
+                .AddExactMatch("praVRF:SimulationData");
+
+            matchSetScript
+                .GetListForType(ItemType.Shipment)
+                .AddExactMatch(
+                    "SimSettlementsV2:MiscObjects:PetStoreCreatureItem",
+                    "SimSettlementsV2:MiscObjects:FurnitureStoreItem"
+                );
+
+            // == Keywords ==
+
+            matchSetKeyword
+                .GetListForType(ItemType.WeaponMelee)
+                .Add(
+                    Fallout4.Keyword.WeaponTypeMelee1H,
+                    Fallout4.Keyword.WeaponTypeMelee2H,
+                    Fallout4.Keyword.WeaponTypeUnarmed
+                );
+
+            matchSetKeyword
+                .GetListForType(ItemType.Perkmag)
+                .Add(Fallout4.Keyword.PerkMagKeyword);
+
+
+            matchSetKeyword.GetListForType(ItemType.Collectible)
+                .Add(Fallout4.Keyword.FeaturedItem);
+
+            matchSetKeyword.GetListForType(ItemType.Quest)
+                .Add(
+                    Fallout4.Keyword.VendorItemNoSale,
+                    Fallout4.Keyword.UnscrappableObject
+                );
+
+            matchSetKeyword.GetListForType(ItemType.Drink)
+                .Add(
+                    Fallout4.Keyword.ObjectTypeWater,
+                    Fallout4.Keyword.ObjectTypeDrink,
+                    Fallout4.Keyword.HC_SustenanceType_QuenchesThirst,
+                    Fallout4.Keyword.ObjectTypeCaffeinated
+                );
+
+            matchSetKeyword.GetListForType(ItemType.Food)
+                .Add(Fallout4.Keyword.FoodEffect,
+                    Fallout4.Keyword.FruitOrVegetable,
+                    Fallout4.Keyword.ObjectTypeFood
+                );
+
+            matchSetKeywordFood.GetListForType(ItemType.FoodRaw)
+                .Add(
+                    Fallout4.Keyword.HC_DiseaseRisk_FoodHigh,
+                    Fallout4.Keyword.HC_DiseaseRisk_FoodStandard
+                );
+            matchSetKeywordFood.GetListForType(ItemType.FoodCrop)
+                .Add(
+                    Fallout4.Keyword.FruitOrVegetable
+                );
+
+            matchSetKeyword.GetListForType(ItemType.StealthBoy)
+                .Add(
+                    Fallout4.Keyword.StealthBoyKeyword
+                );
+
+            matchSetKeyword.GetListForType(ItemType.Device)
+                .Add(
+                    Fallout4.Keyword.ChemTypeStealthBoy,
+                    Robot.Keyword.DLC01ObjectTypeRepairKit
+                );
+
+            matchSetKeyword.GetListForType(ItemType.FusionCore)
+                .Add(
+                    Fallout4.Keyword.isPowerArmorBattery
+                );
+
+            keywordListChem.Add(
+                Fallout4.Keyword.ObjectTypeStimpak,
+                Fallout4.Keyword.ObjectTypeChem,
+                Fallout4.Keyword.CA_ObjType_ChemBad,
+                Fallout4.Keyword.HC_DiseaseRiskChem,
+                Fallout4.Keyword.HC_CausesImmunodeficiency,
+                Fallout4.Keyword.HC_SustenanceType_IncreasesHunger
             );
 
-            modelListCard.AddRegexMatch(MATCH_MODEL_MODEL);
+            // == Sounds ==
+            soundListFood.Add(
+               Fallout4.SoundDescriptor.NPCHumanEatChewy,
+               Fallout4.SoundDescriptor.NPCHumanEatGeneric,
+               Fallout4.SoundDescriptor.NPCHumanEatEgg,
+               Fallout4.SoundDescriptor.NPCHumanEatSoup,
+               Fallout4.SoundDescriptor.NPCHumanEatSoupSlurp
+           );
 
-            modelListPassword.AddExactMatch(
-                "props\\holotape_prop.nif",
-                "interface\\newspaper\\noteripped.nif",
-                "props\\note_lowpoly.nif"
+            soundListChem.Add(
+                Fallout4.SoundDescriptor.NPCHumanEatMentats,
+                Fallout4.SoundDescriptor.NPCHumanChemsPsycho,
+                Fallout4.SoundDescriptor.NPCHumanChemsUseJet,
+                Fallout4.SoundDescriptor.NPCHumanChemsAddictol
             );
-            modelListPassword.AddRegexMatch(MATCH_MODEL_NOTE);
 
-            modelListFoodCrop.AddExactMatch("Landscape\\Plants\\Ingredients\\WastelandFungusStalkIngredient01.nif");
+            matchSetSound.GetListForType(ItemType.Device)
+                .Add(Fallout4.SoundDescriptor.OBJStealthBoyActivate);// leave it here for now
 
-            // stuff
-            modelListPipBoy.AddRegexMatch(MATCH_MODEL_PIPBOY);
-            scriptListPipBoy.AddSuffixMatch("PipboyMiscItemScript");
+            matchSetSound.GetListForType(ItemType.Tool)
+                .Add(Fallout4.SoundDescriptor.NPCHumanWhistleDog);
 
-            keywordsQuest.Add(Fallout4.Keyword.VendorItemNoSale);
-            keywordsQuest.Add(Fallout4.Keyword.UnscrappableObject);
+
+            // == Programs == 
 
             programListGame.AddExactMatch(
                 "atomiccommand.swf",
@@ -289,152 +557,46 @@ namespace ItemTagger.ItemTypeFinder
                 "automatron\\automatron.swf"
             );
 
+            // == Names == 
             nameListSettings.AddPrefixMatch(" - ");
             nameListSettings.AddSubstringMatch("setting", "config");
 
-            keywordListDrink.Add(Fallout4.Keyword.ObjectTypeWater);
-            keywordListDrink.Add(Fallout4.Keyword.ObjectTypeDrink);
-            keywordListDrink.Add(Fallout4.Keyword.HC_SustenanceType_QuenchesThirst);
-            keywordListDrink.Add(Fallout4.Keyword.ObjectTypeCaffeinated);
+            
 
-            keywordListFood.Add(Fallout4.Keyword.FoodEffect);
+           
+            // == INNRs ==
+            innrListSkip.Add(
+                Fallout4.InstanceNamingRules.dn_BACKUP.FormKey,
+                Fallout4.InstanceNamingRules.dn_Clothes.FormKey,
+                Fallout4.InstanceNamingRules.dn_CommonArmor.FormKey,
+                Fallout4.InstanceNamingRules.dn_CommonGun.FormKey,
+                Fallout4.InstanceNamingRules.dn_CommonMelee.FormKey,
+                Fallout4.InstanceNamingRules.dn_PowerArmor.FormKey,
+                Fallout4.InstanceNamingRules.dn_VaultSuit.FormKey,
+        
+                NukaWorld.InstanceNamingRules.dn_DLC04_PowerArmor_NukaCola.FormKey,
+                NukaWorld.InstanceNamingRules.dn_DLC04_PowerArmor_Overboss.FormKey,
+                NukaWorld.InstanceNamingRules.dn_DLC04_PowerArmor_Quantum.FormKey,
+                NukaWorld.InstanceNamingRules.DLC04_dn_CommonArmorUpdate.FormKey,
+                NukaWorld.InstanceNamingRules.DLC04_dn_CommonGunUpdate.FormKey,
+                NukaWorld.InstanceNamingRules.DLC04_dn_CommonMeleeUpdate.FormKey,
+    
+                Coast.InstanceNamingRules.DLC03_dn_CommonArmor.FormKey,
+                Coast.InstanceNamingRules.DLC03_dn_CommonGun.FormKey,
+                Coast.InstanceNamingRules.DLC03_dn_CommonMelee.FormKey,
+                Coast.InstanceNamingRules.DLC03_dn_Legendary_Armor.FormKey,
+                Coast.InstanceNamingRules.DLC03_dn_Legendary_Weapons.FormKey,
+     
+                Robot.InstanceNamingRules.DLC01dn_LightningGun.FormKey,
+                Robot.InstanceNamingRules.DLC01dn_PowerArmor.FormKey
+            );
 
-            // these are unreliable, more than just food has these
-            //keywordListFood.Add(Fallout4.Keyword.HC_DiseaseRisk_FoodHigh);
-            //keywordListFood.Add(Fallout4.Keyword.HC_DiseaseRisk_FoodStandard);
 
-            keywordListFood.Add(Fallout4.Keyword.FruitOrVegetable);
-            keywordListFood.Add(Fallout4.Keyword.ObjectTypeFood);
 
-            keywordListFoodDisease.Add(Fallout4.Keyword.HC_DiseaseRisk_FoodHigh);
-            keywordListFoodDisease.Add(Fallout4.Keyword.HC_DiseaseRisk_FoodStandard);
+            // == hard overrides ==
+            hardcodedOverrides.Add(Fallout4.Ingestible.StealthBoy.FormKey, ItemType.StealthBoy);
+            hardcodedOverrides.Add(Fallout4.Ingestible.RRStealthBoy.FormKey, ItemType.StealthBoy);
 
-            keywordListDevice.Add(Fallout4.Keyword.ChemTypeStealthBoy);
-            keywordListDevice.Add(Fallout4.Keyword.StealthBoyKeyword);
-
-            keywordListDevice.Add(Robot.Keyword.DLC01ObjectTypeRepairKit);
-
-            keywordListChem.Add(Fallout4.Keyword.ObjectTypeStimpak);
-            keywordListChem.Add(Fallout4.Keyword.ObjectTypeChem);
-            keywordListChem.Add(Fallout4.Keyword.CA_ObjType_ChemBad);
-            keywordListChem.Add(Fallout4.Keyword.HC_DiseaseRiskChem);
-            keywordListChem.Add(Fallout4.Keyword.HC_CausesImmunodeficiency);
-            keywordListChem.Add(Fallout4.Keyword.HC_SustenanceType_IncreasesHunger);
-
-            soundListFood.Add(Fallout4.SoundDescriptor.NPCHumanEatChewy);
-            soundListFood.Add(Fallout4.SoundDescriptor.NPCHumanEatGeneric);
-            soundListFood.Add(Fallout4.SoundDescriptor.NPCHumanEatEgg);
-            soundListFood.Add(Fallout4.SoundDescriptor.NPCHumanEatSoup);
-            soundListFood.Add(Fallout4.SoundDescriptor.NPCHumanEatSoupSlurp);
-
-            soundListChem.Add(Fallout4.SoundDescriptor.NPCHumanEatMentats);
-            soundListChem.Add(Fallout4.SoundDescriptor.NPCHumanChemsPsycho);
-            soundListChem.Add(Fallout4.SoundDescriptor.NPCHumanChemsUseJet);
-            soundListChem.Add(Fallout4.SoundDescriptor.NPCHumanChemsAddictol);
-
-            soundListDevice.Add(Fallout4.SoundDescriptor.OBJStealthBoyActivate);
-            soundListTool.Add(Fallout4.SoundDescriptor.NPCHumanWhistleDog);
-
-            // INNRs
-            innrListSkip.Add(Fallout4.InstanceNamingRules.dn_BACKUP.FormKey);
-            innrListSkip.Add(Fallout4.InstanceNamingRules.dn_Clothes.FormKey);
-            innrListSkip.Add(Fallout4.InstanceNamingRules.dn_CommonArmor.FormKey);
-            innrListSkip.Add(Fallout4.InstanceNamingRules.dn_CommonGun.FormKey);
-            innrListSkip.Add(Fallout4.InstanceNamingRules.dn_CommonMelee.FormKey);
-            innrListSkip.Add(Fallout4.InstanceNamingRules.dn_PowerArmor.FormKey);
-            innrListSkip.Add(Fallout4.InstanceNamingRules.dn_VaultSuit.FormKey);
-
-            innrListSkip.Add(NukaWorld.InstanceNamingRules.dn_DLC04_PowerArmor_NukaCola.FormKey);
-            innrListSkip.Add(NukaWorld.InstanceNamingRules.dn_DLC04_PowerArmor_Overboss.FormKey);
-            innrListSkip.Add(NukaWorld.InstanceNamingRules.dn_DLC04_PowerArmor_Quantum.FormKey);
-            innrListSkip.Add(NukaWorld.InstanceNamingRules.DLC04_dn_CommonArmorUpdate.FormKey);
-            innrListSkip.Add(NukaWorld.InstanceNamingRules.DLC04_dn_CommonGunUpdate.FormKey);
-            innrListSkip.Add(NukaWorld.InstanceNamingRules.DLC04_dn_CommonMeleeUpdate.FormKey);
-
-            innrListSkip.Add(Coast.InstanceNamingRules.DLC03_dn_CommonArmor.FormKey);
-            innrListSkip.Add(Coast.InstanceNamingRules.DLC03_dn_CommonGun.FormKey);
-            innrListSkip.Add(Coast.InstanceNamingRules.DLC03_dn_CommonMelee.FormKey);
-            innrListSkip.Add(Coast.InstanceNamingRules.DLC03_dn_Legendary_Armor.FormKey);
-            innrListSkip.Add(Coast.InstanceNamingRules.DLC03_dn_Legendary_Weapons.FormKey);
-
-            innrListSkip.Add(Robot.InstanceNamingRules.DLC01dn_LightningGun.FormKey);
-            innrListSkip.Add(Robot.InstanceNamingRules.DLC01dn_PowerArmor.FormKey);
-
-            // TODO:
-            // SimSettlementsV2:ObjectReferences:DeployableCityPlannersDesk -> city planner's desk -> tool? device?
-
-            // edid matches
-
-            edidMatchLists
-                .GetListForType(ItemType.HolotapeSettings)
-                .AddSubstringMatch("setting", "config", "cheat");
-
-            edidMatchLists
-                .GetListForType(ItemType.GoodChem)
-                .AddPrefixMatch("kgSIM_MedicalResearch_");
-
-            edidMatchLists
-                .GetListForType(ItemType.Quest)
-                .AddPrefixMatch(
-                    "DLC01MQ03RobotPart",
-                    "SS2_QuestItem_",
-                    "SS2C2_QuestItem_",
-                    "kgSIM_EnergySignatureScanner_",
-                    "DLC06WorkshopControlBoard",
-                    "kgSIM_IndRev_Fuse",
-                    "DLC03_Banner_",
-                    "SS2C2_NQ01_Inv_BookCrate"
-                )
-                .AddExactMatch(
-                    "kgSIM_MicrofusionSubImage",
-                    "SS2_WC_ArchonPlans",
-                    "SS2_MQ07_TechnicalDocument",
-                    "SS2_MQ12JakesScrewdriver",
-                    "kgSIM_MedicalResearch_MixedSample",
-                    "kgSIM_IndRev_ActiveCore"
-                );
-
-            edidMatchLists
-                .GetListForType(ItemType.Collectible)
-                .AddPrefixMatch(
-                    "SS2_PurchaseableJunkSculpture_",
-                    "BotModel",
-                    "DLC04ParkMedallion"
-                );
-
-            edidMatchLists
-                .GetListForType(ItemType.Shipment)
-                .AddPrefixMatch(
-                    "SS2_PriorityShipment_",
-                    "SS2E_PurchaseablePet_",
-                    "SS2_PurchaseablePet_",
-                    "SS2_PurchaseableFurniture_"
-                );
-
-            edidMatchLists
-                .GetListForType(ItemType.OtherMisc)
-                .AddPrefixMatch("SS2_LootBox_");
-
-            edidMatchLists
-                .GetListForType(ItemType.Device)
-                .AddExactMatch(
-                    "SS2_ASAM_SensorScanner",
-                    "kgSIM_EnergySignatureScanner_Inventory",
-                    "SS2_SalvageBeacon",
-                    "SS2_Mark1Beacon"
-                );
-
-            edidMatchLists
-                .GetListForType(ItemType.LooseMod)
-                .AddPrefixMatch(
-                    "pa_comp_T60_" // these things are configured in a really weird way, so, hardcoding them like this
-                );
-
-            scriptMatchLists
-                .GetListForType(ItemType.Holotape)
-                .AddExactMatch("praVRF:SimulationData");
-
-            // hard overrides
             hardcodedOverrides.Add(Fallout4.Ingestible.GroundMolerat.FormKey, ItemType.Food);
             hardcodedOverrides.Add(Fallout4.Ingestible.MS05BEggDeathclaw.FormKey, ItemType.FoodRaw);
             hardcodedOverrides.Add(Fallout4.MiscItem.BoS303BerylliumAgitator.FormKey, ItemType.Quest);

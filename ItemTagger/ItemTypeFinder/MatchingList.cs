@@ -3,6 +3,9 @@ using System.Text.RegularExpressions;
 
 namespace ItemTagger.ItemTypeFinder
 {
+    /// <summary>
+    /// A list of strings with varying matching criteria, to compare a string against
+    /// </summary>
     internal class MatchingList
     {
         private readonly SortedSet<string> exactMatchList = new(new CaseInsensitiveStringComparer());

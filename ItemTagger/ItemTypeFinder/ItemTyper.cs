@@ -1,3 +1,4 @@
+using DynamicData.Kernel;
 using ItemTagger.Helper;
 using Mutagen.Bethesda;
 using Mutagen.Bethesda.Fallout4;
@@ -37,13 +38,15 @@ namespace ItemTagger.ItemTypeFinder
         Liquor,     // Alcoholic beverages
         Nukacola,   // Nuka Cola of any kind
         Syringe,    // Syringer ammo
-        Device,     // Consumables which are supposed to be devices instead of something to eat, like the Stealth Boy
+        Device,     // Consumables which are supposed to be devices instead of something to eat, like the Stealth Boy (but not the stealth boy)
+        StealthBoy, // Let's tag these explicitly, just so that not all devices have the stealth boy icon
         Tool,       // Similar to above, but for more low-tech things. Like SimSettlements Town Meeting Gavel, or the Companion Whistle
 
         // BOOK
         News,       // Newspaper
         Note,       // Any paper note
         Perkmag,    // Perk Magazine
+        Book,       // A book, mostly mod-added
 
         // WEAP
         Mine,       // Mine
@@ -55,6 +58,8 @@ namespace ItemTagger.ItemTypeFinder
         KeyPassword,        // Password, usually written on a note or holotape
 
         Ammo,               // Generic Ammo
+        FusionCore,         // Fusion Core
+        MiniNuke,           // MiniNuke
 
         Holotape,           // Holotape
         HolotapeGame,       // Game Holotape
@@ -101,6 +106,7 @@ namespace ItemTagger.ItemTypeFinder
         private static readonly ItemType[] TYPES_ALCH = {
             ItemType.BadChem,
             ItemType.Device,
+            ItemType.StealthBoy,
             ItemType.Drink,
             ItemType.Food,
             ItemType.FoodCrop,
@@ -114,7 +120,9 @@ namespace ItemTagger.ItemTypeFinder
         };
 
         private static readonly ItemType[] TYPES_AMMO = {
-            ItemType.Ammo
+            ItemType.Ammo,
+            ItemType.FusionCore,
+            ItemType.MiniNuke
         };
 
         private static readonly ItemType[] TYPES_HOLOTAPE = {
@@ -126,7 +134,8 @@ namespace ItemTagger.ItemTypeFinder
         private static readonly ItemType[] TYPES_BOOK = {
             ItemType.News,
             ItemType.Note,
-            ItemType.Perkmag
+            ItemType.Perkmag,
+            ItemType.Book
         };
 
         private static readonly ItemType[] TYPES_KEY = {
@@ -499,7 +508,7 @@ namespace ItemTagger.ItemTypeFinder
                 return ItemType.None;
             }
 
-            var edidType = itemTypeData.edidMatchLists.GetMatchingType(armor.EditorID, TYPES_ARMOR);
+            var edidType = itemTypeData.matchSetEdid.GetMatchingType(armor.EditorID, TYPES_ARMOR);
             if (edidType != null)
             {
                 return (ItemType)edidType;
@@ -555,17 +564,19 @@ namespace ItemTagger.ItemTypeFinder
                 return ItemType.None;
             }
 
-            var edidType = itemTypeData.edidMatchLists.GetMatchingType(weapon.EditorID, TYPES_WEAPON);
+            var edidType = itemTypeData.matchSetEdid.GetMatchingType(weapon.EditorID, TYPES_WEAPON);
             if (edidType != null)
             {
                 return (ItemType)edidType;
             }
 
+            var keywordType = itemTypeData.matchSetKeyword.GetMatchingTypeByKeyword(weapon, TYPES_WEAPON);
+
             // ammo?
             if (!weapon.Ammo.IsNull)
             {
                 // this thing uses ammo, so not an explosive
-                if (weapon.HasAnyKeyword(itemTypeData.keywordsWeaponMelee))
+                if (keywordType == ItemType.WeaponMelee)
                 {
                     return ItemType.WeaponMelee;
                 }
@@ -599,7 +610,7 @@ namespace ItemTagger.ItemTypeFinder
                 return ItemType.Grenade;
             }
 
-            if (weapon.HasAnyKeyword(itemTypeData.keywordsWeaponMelee))
+            if (keywordType == ItemType.WeaponMelee)
             {
                 return ItemType.WeaponMelee;
             }
@@ -639,7 +650,7 @@ namespace ItemTagger.ItemTypeFinder
                 return ItemType.None;
             }
 
-            var edidType = itemTypeData.edidMatchLists.GetMatchingType(alch.EditorID, TYPES_ALCH);
+            var edidType = itemTypeData.matchSetEdid.GetMatchingType(alch.EditorID, TYPES_ALCH);
             if (edidType != null)
             {
                 return (ItemType)edidType;
@@ -683,19 +694,14 @@ namespace ItemTagger.ItemTypeFinder
             }
 
             // continue with heuristics
-            if (alch.HasAnyKeyword(itemTypeData.keywordListFood))
+            var keywordType = itemTypeData.matchSetKeyword.GetMatchingTypeByKeyword(alch, TYPES_ALCH);
+            if(keywordType != null)
             {
-                return GetFoodType(alch);
-            }
-
-            if (alch.HasAnyKeyword(itemTypeData.keywordListDrink))
-            {
-                // generic drink
-                return ItemType.Drink;
-            }
-            if (alch.HasAnyKeyword(itemTypeData.keywordListDevice))
-            {
-                return ItemType.Device;
+                if(keywordType == ItemType.Food)
+                {
+                    return GetFoodType(alch);
+                }
+                return (ItemType)keywordType;
             }
 
             if (alch.HasAnyKeyword(itemTypeData.keywordListChem))
@@ -708,14 +714,11 @@ namespace ItemTagger.ItemTypeFinder
             }
 
             // model list tool and device
-            if (itemTypeData.whitelistModelDevice.Matches(model))
+            ItemType? modelType = itemTypeData.matchSetModel.GetMatchingType(model, ItemType.Device, ItemType.Tool, ItemType.StealthBoy);
+            if(null != modelType)
             {
-                return ItemType.Device;
-            }
-
-            if (itemTypeData.whitelistModelTool.Matches(model))
-            {
-                return ItemType.Tool;
+                // why is this so stupid? I thought this compiler is supposed to be "smart", and figure out that this isn't null at this point?
+                return (ItemType)modelType;
             }
 
             // now try sound
@@ -756,14 +759,10 @@ namespace ItemTagger.ItemTypeFinder
                     return ItemType.GoodChem;
                 }
 
-                if (alch.ConsumeSound.IsAnyOf(itemTypeData.soundListDevice))
+                var soundType = itemTypeData.matchSetSound.GetMatchingType(alch.ConsumeSound);
+                if(null != soundType)
                 {
-                    return ItemType.Device;
-                }
-
-                if (alch.ConsumeSound.IsAnyOf(itemTypeData.soundListTool))
-                {
-                    return ItemType.Tool;
+                    return (ItemType)soundType;
                 }
             }
 
@@ -789,29 +788,23 @@ namespace ItemTagger.ItemTypeFinder
             {
                 return ItemType.Food;
             }
-            if (food.HasKeyword(Fallout4.Keyword.FruitOrVegetable))
+
+            var kwType = itemTypeData.matchSetKeywordFood.GetMatchingTypeByKeyword(food);
+            if(null != kwType)
             {
-                return ItemType.FoodCrop;
+                return (ItemType)kwType;
             }
 
-            if (food.HasAnyKeyword(itemTypeData.keywordListFoodDisease))
-            {
-                return ItemType.FoodRaw;
-            }
-
-            //prewar doesn't have HC_IgnoreAsFood
+            // prewar doesn't have HC_IgnoreAsFood
+            // hm, add an inverse option to MatchingFormListSet?
             if (!food.HasKeyword(Fallout4.Keyword.HC_IgnoreAsFood))
             {
                 return ItemType.FoodPrewar;
             }
 
             // after keyword matching, match meshes and such
-            if (itemTypeData.modelListFoodCrop.Matches(food.Model?.File))
-            {
-                return ItemType.FoodCrop;
-            }
-
-            return ItemType.Food;
+            var modelType = itemTypeData.matchSetModel.GetMatchingType(food.Model?.File);
+            return modelType.ValueOr(ItemType.Food);
         }
 
         public ItemType GetHolotapeType(IHolotapeGetter holotape)
@@ -841,7 +834,7 @@ namespace ItemTagger.ItemTypeFinder
                     return ItemType.None;
                 }
 
-                var edidType = itemTypeData.edidMatchLists.GetMatchingType(holotape.EditorID, TYPES_HOLOTAPE);
+                var edidType = itemTypeData.matchSetEdid.GetMatchingType(holotape.EditorID, TYPES_HOLOTAPE);
                 if (edidType != null)
                 {
                     return (ItemType)edidType;
@@ -903,21 +896,24 @@ namespace ItemTagger.ItemTypeFinder
                 return ItemType.None;
             }
 
-            var edidType = itemTypeData.edidMatchLists.GetMatchingType(book.EditorID, TYPES_BOOK);
+            var edidType = itemTypeData.matchSetEdid.GetMatchingType(book.EditorID, TYPES_BOOK);
             if (edidType != null)
             {
                 return (ItemType)edidType;
             }
 
-            var modelName = book.Model?.File;
-            if (itemTypeData.whitelistModelNews.Matches(modelName) || book.HasAnyScript(itemTypeData.scriptListNews))
+            var modelType = itemTypeData.matchSetModel.GetMatchingType(book.Model?.File, TYPES_BOOK);
+
+            if(modelType != null)
             {
-                return ItemType.News;
+                return (ItemType)modelType;
             }
 
-            if (book.HasAnyKeyword(itemTypeData.keywordsPerkmag) || book.HasAnyScript(itemTypeData.scriptListPerkMag))
+            // now scripts
+            var scriptType = book.GetMatchingTypeByScript(itemTypeData.matchSetScript, TYPES_BOOK);
+            if (scriptType != null)
             {
-                return ItemType.Perkmag;
+                return (ItemType)scriptType;
             }
 
             return ItemType.Note;
@@ -953,10 +949,22 @@ namespace ItemTagger.ItemTypeFinder
                 return ItemType.None;
             }
 
-            var edidType = itemTypeData.edidMatchLists.GetMatchingType(ammo.EditorID, TYPES_AMMO);
+            var edidType = itemTypeData.matchSetEdid.GetMatchingType(ammo.EditorID, TYPES_AMMO);
             if (edidType != null)
             {
                 return (ItemType)edidType;
+            }
+
+            var kwType = itemTypeData.matchSetKeyword.GetMatchingTypeByKeyword(ammo, TYPES_AMMO);
+            if (kwType != null)
+            {
+                return (ItemType)kwType;
+            }
+
+            var modelType = itemTypeData.matchSetModel.GetMatchingType(ammo.Model?.File, TYPES_AMMO);
+            if (modelType != null)
+            {
+                return (ItemType)modelType;
             }
 
             return ItemType.Ammo;
@@ -987,31 +995,16 @@ namespace ItemTagger.ItemTypeFinder
                 return ItemType.None;
             }
 
-            var edidType = itemTypeData.edidMatchLists.GetMatchingType(keyItem.EditorID, TYPES_KEY);
+            var edidType = itemTypeData.matchSetEdid.GetMatchingType(keyItem.EditorID, TYPES_KEY);
             if (edidType != null)
             {
                 return (ItemType)edidType;
             }
 
-            //var edid = keyItem.EditorID;
             var model = keyItem.Model?.File;
 
-            if (itemTypeData.modelListKey.Matches(model))
-            {
-                return ItemType.Key;
-            }
-
-            if (itemTypeData.modelListCard.Matches(model))
-            {
-                return ItemType.KeyCard;
-            }
-
-            if (itemTypeData.modelListPassword.Matches(model))
-            {
-                return ItemType.KeyPassword;
-            }
-
-            return ItemType.Key;
+            var modelType = itemTypeData.matchSetModel.GetMatchingType(model, TYPES_KEY);
+            return modelType.ValueOr(ItemType.Key);
         }
 
         public ItemType GetMiscType(IMiscItemGetter miscItem)
@@ -1039,23 +1032,19 @@ namespace ItemTagger.ItemTypeFinder
                 return ItemType.None;
             }
 
-            var edidType = itemTypeData.edidMatchLists.GetMatchingType(miscItem.EditorID, TYPES_MISC);
+            var edidType = itemTypeData.matchSetEdid.GetMatchingType(miscItem.EditorID, TYPES_MISC);
             if (edidType != null)
             {
                 return (ItemType)edidType;
             }
 
-            var scriptType = miscItem.GetMatchingTypeByScript(itemTypeData.scriptMatchLists);
+            var scriptType = miscItem.GetMatchingTypeByScript(itemTypeData.matchSetScript, TYPES_MISC);
             if (scriptType != null)
             {
                 return (ItemType)scriptType;
             }
 
-            if (miscItem.HasAnyScript(itemTypeData.scriptListPipBoy))
-            {
-                return ItemType.PipBoy;
-            }
-
+            // let's leave this hardcoded, this is special
             if (miscItem.HasKeyword(Fallout4.Keyword.ObjectTypeLooseMod) || IsLooseMod(miscItem))
             {
                 return ItemType.LooseMod;
@@ -1086,21 +1075,20 @@ namespace ItemTagger.ItemTypeFinder
                 return ItemType.Scrap;
             }
 
-            if (miscItem.HasKeyword(Fallout4.Keyword.FeaturedItem))
+            var keywordType = itemTypeData.matchSetKeyword.GetMatchingTypeByKeyword(miscItem, ItemType.Collectible, ItemType.Quest);
+            if(keywordType != null)
             {
-                return ItemType.Collectible;
+                return (ItemType)keywordType;
             }
 
-            if (miscItem.HasAnyKeyword(itemTypeData.keywordsQuest))
+            // potentially add more types here later
+            var modelType = itemTypeData.matchSetModel.GetMatchingType(miscItem.Model?.File, ItemType.PipBoy);
+            if(null != modelType)
             {
-                return ItemType.Quest;
+                return (ItemType)modelType;
             }
 
-            if (itemTypeData.modelListPipBoy.Matches(miscItem.Model?.File))
-            {
-                return ItemType.PipBoy;
-            }
-
+            // now just check the other stuff
             if (miscItem.Weight == 0 && miscItem.Value > 0)
             {
                 return ItemType.Currency;
