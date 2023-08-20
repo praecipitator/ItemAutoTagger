@@ -643,17 +643,17 @@ namespace ItemTagger.ItemTypeFinder
                 return ItemType.None;
             }
 
+            var edidType = itemTypeData.matchSetEdid.GetMatchingType(alch.EditorID, TYPES_ALCH);
+            if (edidType != null)
+            {
+                return (ItemType)edidType;
+            }
+
             var model = alch.Model?.File;
             if (model.IsNullOrEmpty())
             {
                 // so apparently I'm not tagging model-less ALCHs
                 return ItemType.None;
-            }
-
-            var edidType = itemTypeData.matchSetEdid.GetMatchingType(alch.EditorID, TYPES_ALCH);
-            if (edidType != null)
-            {
-                return (ItemType)edidType;
             }
 
             // check the ObjectType* keywords first
