@@ -137,7 +137,8 @@ namespace ItemTagger.ItemTypeFinder
             );
 
             blacklistEdid.AddExactMatch(
-                "HM_UnassignedLabel"
+                "HM_UnassignedLabel",
+                "DN015_NoneNameMisc"
             );
 
             // let's just ignore ALL nameholders
