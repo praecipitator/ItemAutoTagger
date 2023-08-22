@@ -13,6 +13,7 @@ namespace ItemTagger
         [SynthesisOrder]
         [SynthesisSettingName("Tagging Configuration")]
         public TaggingConfigType TaggingConfig = TaggingConfigType.FIS;
+        // public TaggingConfigType TaggingConfig = TaggingConfigType.LWIS;
 
         [SynthesisOrder]
         [SynthesisSettingName("Append components")]
@@ -175,8 +176,13 @@ namespace ItemTagger
 
         [SynthesisOrder]
         [SynthesisSettingName("Device")]
-        [SynthesisTooltip("A consumable which is supposed to be a device, instead of something to eat, like the Stealth Boy")]
+        [SynthesisTooltip("A consumable which is supposed to be a device, instead of an actual consumable. Or, a Misc item with a special function, like the Salvage Beacon")]
         public string tagDevice = "";
+
+        [SynthesisOrder]
+        [SynthesisSettingName("Stealth Boy")]
+        [SynthesisTooltip("Any kind of Stealth Boy, when in doubt, use the same text as for \"Device\"")]
+        public string tagStealthBoy = "";
 
         [SynthesisOrder]
         [SynthesisSettingName("Tool")]
@@ -197,6 +203,11 @@ namespace ItemTagger
         [SynthesisSettingName("Perk Magazine")]
         [SynthesisTooltip("A magazine, usually one which teaches you perks")]
         public string tagPerkmag = "";
+
+        [SynthesisOrder]
+        [SynthesisSettingName("Book")]
+        [SynthesisTooltip("A readable book, mostly mod-added. Doesn't affect vanilla \"Overdue Books\"")]
+        public string tagBook = "";
 
         [SynthesisOrder]
         [SynthesisSettingName("Mine")]
@@ -227,6 +238,16 @@ namespace ItemTagger
         [SynthesisSettingName("Ammo")]
         [SynthesisTooltip("Generic ammo")]
         public string tagAmmo = "";
+
+        [SynthesisOrder]
+        [SynthesisSettingName("Fusion Core")]
+        [SynthesisTooltip("Fusion Core or Fusion Core like ammunition")]
+        public string tagFusionCore = "";
+
+        [SynthesisOrder]
+        [SynthesisSettingName("Mini Nuke")]
+        [SynthesisTooltip("Mini Nuke")]
+        public string tagMiniNuke = "";
 
         [SynthesisOrder]
         [SynthesisSettingName("Holotape")]
