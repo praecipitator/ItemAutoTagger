@@ -2,7 +2,7 @@ using ItemTagger.ItemTypeFinder;
 
 namespace ItemTagger.TaggingConfigs
 {
-    internal class DefaultTaggingConfigurations
+    public class DefaultTaggingConfigurations
     {
         private readonly IDictionary<TaggingConfigType, TaggingConfiguration> defaultConfigs = new Dictionary<TaggingConfigType, TaggingConfiguration>();
 

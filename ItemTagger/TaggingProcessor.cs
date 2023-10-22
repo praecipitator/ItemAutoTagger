@@ -13,7 +13,7 @@ using System.Text.RegularExpressions;
 
 namespace ItemTagger
 {
-    internal class TaggingProcessor
+    public class TaggingProcessor
     {
         private readonly TaggingConfiguration taggingConfig;
 
@@ -26,7 +26,7 @@ namespace ItemTagger
 
         private static readonly Regex TAG_STRIP_COMPONENTS = new(@"{{{[^{}]*}}}\s*$", RegexOptions.Compiled);
 
-        private static readonly Regex REMOVE_BRACKETS = new(@"^[\[{(](.+)[\]})]$", RegexOptions.Compiled);
+        private static readonly Regex REMOVE_BRACKETS = new(@"^[\[{(]([^\[{(\]})]+)[\]})]$", RegexOptions.Compiled);
 
         private readonly HashSet<IInstanceNamingRulesGetter> relevantInnrs = new();
 
@@ -65,7 +65,7 @@ namespace ItemTagger
             ProcessInnrs();
         }
 
-        private static string GetTaggedName(string newTag, string inputName, string suffix = "")
+        public static string GetTaggedName(string newTag, string inputName, string suffix = "")
         {
             if (newTag == "")
             {
@@ -856,6 +856,11 @@ namespace ItemTagger
 
         private string CleanName(string name, bool stripAllTags = false)
         {
+            return GetCleanedName(name, taggingConfig, settings.RemoveBrackets, stripAllTags);
+        }
+
+        public static string GetCleanedName(string name, TaggingConfiguration taggingConfig, bool removeBrackets, bool stripAllTags)
+        {
             name = TAG_STRIP_COMPONENTS.Replace(name, "").Trim();
             if (name.Length == 0)
             {
@@ -887,7 +892,7 @@ namespace ItemTagger
             var firstPart = name[..1];
             var lastPart = name[^1..];
 
-            if (settings.RemoveBrackets)
+            if (removeBrackets)
             {
                 var matches = REMOVE_BRACKETS.Match(name);
                 if (matches.Groups.Count >= 2)

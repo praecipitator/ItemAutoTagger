@@ -17,29 +17,6 @@ namespace ItemTagger.ItemTypeFinder
         public readonly MatchingList blacklistName = new();
         public readonly MatchingFormList<IKeywordGetter> keywordsGlobalBlacklist = new();
 
-        // TODO refactor this. use MatchingListSets
-        // whitelists
-        // models
-        // public readonly MatchingList modelListTool = new();
-
-        //public readonly MatchingList modelListStealthboy = new();
-        //public readonly MatchingList modelListDevice = new();
-
-
-        // public readonly MatchingList modelListCard = new();
-
-        // public readonly MatchingList modelListKey = new();
-        // public readonly MatchingList modelListPassword = new();
-
-        // public readonly MatchingList modelListFoodCrop = new();
-        // public readonly MatchingList modelListNews = new();
-        // public readonly MatchingList modelListPipBoy = new();
-
-        // scripts
-        // public readonly MatchingList scriptListPipBoy = new();
-        // public readonly MatchingList scriptListPerkMag = new();
-        // public readonly MatchingList scriptListNews = new();
-
         // programs (holotapes only)
         public readonly MatchingList programListGame = new();
 
@@ -121,7 +98,8 @@ namespace ItemTagger.ItemTypeFinder
                 "simsettlementsv2:miscobjects:ideologychoice",
                 "simsettlementsv2:miscobjects:factionname",
                 "SimSettlementsV2:MiscObjects:Disaster_AttackDefinition",
-                "VFX:MiscObjects:UniversalUnlockable"
+                "VFX:MiscObjects:UniversalUnlockable",
+                "SimSettlementsV2:MiscObjects:WorldspaceConfig"
             );
 
             blacklistScript.AddPrefixMatch(
@@ -138,7 +116,10 @@ namespace ItemTagger.ItemTypeFinder
 
             blacklistEdid.AddExactMatch(
                 "HM_UnassignedLabel",
-                "DN015_NoneNameMisc"
+                "DN015_NoneNameMisc",
+                "SS2_c_Power_scrap",
+                "SS2_c_Food_scrap",
+                "SS2_c_Water_scrap"
             );
 
             // let's just ignore ALL nameholders
@@ -189,7 +170,14 @@ namespace ItemTagger.ItemTypeFinder
                 "SS2C2_DoNotUse_Obsolete",
                 "SS2_C3_MapMarkerHandler_",
                 "kgSIM_VIPStory",
-                "praLibrary_PrizeDummy_"
+                "praLibrary_PrizeDummy_",
+
+                // SS2 hq stuff:
+                "SS2_HQ_CategoryResource_", 
+                "SS2_ComponentResource_",
+                "SS2_HQResourceToken_", 
+                "SS2_HQ_DailyLimiter_"
+
              );
 
             blacklistEdid.AddRegexMatch(
@@ -231,7 +219,8 @@ namespace ItemTagger.ItemTypeFinder
                     "DLC06WorkshopControlBoard",
                     "kgSIM_IndRev_Fuse",
                     "DLC03_Banner_",
-                    "SS2C2_NQ01_Inv_BookCrate"
+                    "SS2C2_NQ01_Inv_BookCrate",
+                    "SS2C3_SQ05_GeneticSample_"
                 )
                 .AddExactMatch(
                     "kgSIM_MicrofusionSubImage",
@@ -239,7 +228,9 @@ namespace ItemTagger.ItemTypeFinder
                     "SS2_MQ07_TechnicalDocument",
                     "SS2_MQ12JakesScrewdriver",
                     "kgSIM_MedicalResearch_MixedSample",
-                    "kgSIM_IndRev_ActiveCore"
+                    "kgSIM_IndRev_ActiveCore",
+                    "SS2C3_NLTC_04_Manifest",
+                    "SS2C3_SA01_GunnerIntel"
                 );
 
             matchSetEdid
