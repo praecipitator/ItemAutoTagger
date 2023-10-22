@@ -8,8 +8,8 @@
 
 
   <ItemGroup>
-    <PackageReference Include="Mutagen.Bethesda" Version="0.42.0.1-nightly-20230819-102945" />
-    <PackageReference Include="Mutagen.Bethesda.FormKeys.Fallout4" Version="3.1.0" />
+    <PackageReference Include="Mutagen.Bethesda" Version="0.43.0.1-nightly-20231011-100807" />
+    <PackageReference Include="Mutagen.Bethesda.FormKeys.Fallout4" Version="3.2.0" />
     <PackageReference Include="Mutagen.Bethesda.Synthesis" Version="0.26.0" />
   </ItemGroup>
 </Project>
