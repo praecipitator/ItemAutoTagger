@@ -357,17 +357,20 @@ namespace ItemTagger.ItemTypeFinder
                     "SS2C2\\Props\\Newspaper.nif",
                     "Props\\Newspaper01.nif",
                     "Props\\Newspaper02.nif"
-                  );
+                );
 
             matchSetModel.GetListForType(ItemType.Book)
                 .AddExactMatch(
                     "RealBooks\\BurntBook01.nif"
-                  );
+                )
+                .AddSuffixMatch(
+                    "BookCollector_Book_Model.nif"
+                );
 
             matchSetModel.GetListForType(ItemType.Perkmag)
                 .AddExactMatch(
                     "SS_IndRev\\Props\\Magazine.nif"
-                  )
+                )
                 .AddPrefixMatch(
                     "Props\\GrognakComic\\",
                     "MunkySpunk\\Props\\Comic_"
