@@ -202,6 +202,10 @@ namespace ItemTagger.ItemTypeFinder
                 );
 
             matchSetEdid
+                .GetListForType(ItemType.Tool)
+                .AddExactMatch("SS2RM_CaravanConstructionKit");
+
+            matchSetEdid
                 .GetListForType(ItemType.HolotapeSettings)
                 .AddSubstringMatch("setting", "config", "cheat");
 
